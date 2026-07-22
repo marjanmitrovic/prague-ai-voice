@@ -43,8 +43,63 @@ async function sendPublicFile(reply: FastifyReply, relativePath: string): Promis
   }
 }
 
+async function sendIndexWithNavigationFix(reply: FastifyReply): Promise<FastifyReply> {
+  const absolutePath = safePublicPath('index.html');
+  if (!absolutePath) {
+    return reply.code(404).send({ error: 'not_found' });
+  }
+
+  try {
+    const html = await readFile(absolutePath, 'utf8');
+    const navigationFixScript = `
+<script>
+(function () {
+  function activateNavigation(targetId, shouldScroll) {
+    if (!targetId) return;
+    var target = document.getElementById(targetId);
+    if (!target) return;
+
+    document.querySelectorAll('.nav button').forEach(function (item) {
+      item.classList.toggle('active', item.dataset.target === targetId);
+    });
+    document.querySelectorAll('.view').forEach(function (view) {
+      view.classList.toggle('active', view.id === targetId);
+    });
+
+    if (shouldScroll) {
+      window.setTimeout(function () {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 80);
+    }
+  }
+
+  document.querySelectorAll('.nav button').forEach(function (button) {
+    button.type = 'button';
+    button.addEventListener('click', function () {
+      activateNavigation(button.dataset.target, true);
+    });
+  });
+
+  document.querySelectorAll('.brand p, .side-card .small, .side-card p').forEach(function (node) {
+    if (node.textContent) node.textContent = node.textContent.replace(/1\\.9\\.0/g, '1.9.1');
+  });
+})();
+</script>`;
+
+    const patched = html
+      .replace(/1\.9\.0/g, '1.9.1')
+      .replace(/<button( class="active" data-target="dashboardView")>/g, '<button type="button"$1>')
+      .replace(/<button( data-target="[^"]+")>/g, '<button type="button"$1>')
+      .replace('</body>', `${navigationFixScript}\n</body>`);
+
+    return reply.type('text/html; charset=utf-8').send(patched);
+  } catch {
+    return reply.code(404).send({ error: 'not_found' });
+  }
+}
+
 export async function staticRoute(app: FastifyInstance): Promise<void> {
-  app.get('/', async (_request, reply) => sendPublicFile(reply, 'index.html'));
+  app.get('/', async (_request, reply) => sendIndexWithNavigationFix(reply));
 
   app.get('/sales', async (_request, reply) => sendPublicFile(reply, 'landing.html'));
   app.get('/landing', async (_request, reply) => sendPublicFile(reply, 'landing.html'));

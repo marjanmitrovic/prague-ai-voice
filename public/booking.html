@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=190" />
+  <link rel="apple-touch-icon" href="/assets/prague-ai-voice-icon-192.png?v=190" />
+  <link rel="manifest" href="/site.webmanifest?v=190" />
+  <meta name="theme-color" content="#10cfd0" />
+  <title>Rezervace | Prague AI Voice</title>
+    <style>
+      :root {
+        --bg: #f6f8fc;
+        --card: #ffffff;
+        --text: #0f172a;
+        --muted: #64748b;
+        --primary: #2563eb;
+        --primary-dark: #1d4ed8;
+        --border: #dbe5f4;
+        --ok: #047857;
+        --bad: #b91c1c;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: radial-gradient(circle at top left, #dbeafe 0, transparent 32%), var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+      }
+      .wrap {
+        width: min(1080px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 32px 0 56px;
+      }
+      header {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 24px;
+        align-items: stretch;
+        margin-bottom: 24px;
+      }
+      .hero, .card {
+        background: rgba(255,255,255,0.92);
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+      }
+      .hero { padding: 34px; }
+      .eyebrow {
+        display: inline-flex;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: #e0ecff;
+        color: #1d4ed8;
+        font-weight: 800;
+        font-size: 13px;
+        margin-bottom: 18px;
+      }
+      h1 {
+        font-size: clamp(34px, 6vw, 64px);
+        line-height: 0.94;
+        letter-spacing: -0.055em;
+        margin: 0 0 18px;
+      }
+      .lead {
+        color: var(--muted);
+        font-size: 19px;
+        line-height: 1.55;
+        max-width: 760px;
+      }
+      .info { padding: 26px; display: grid; gap: 14px; }
+      .info strong { font-size: 18px; }
+      .pill {
+        display: inline-flex;
+        width: fit-content;
+        padding: 8px 11px;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #1e40af;
+        font-weight: 700;
+      }
+      main {
+        display: grid;
+        grid-template-columns: 0.9fr 1.1fr;
+        gap: 24px;
+      }
+      .card { padding: 26px; }
+      h2 { margin: 0 0 14px; font-size: 28px; letter-spacing: -0.03em; }
+      .services { display: grid; gap: 12px; }
+      .service {
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 16px;
+        background: #fbfdff;
+      }
+      .service h3 { margin: 0 0 7px; font-size: 18px; }
+      .service p { margin: 0; color: var(--muted); line-height: 1.45; }
+      form { display: grid; gap: 15px; }
+      label { display: grid; gap: 7px; font-weight: 800; color: #1e293b; }
+      input, select, textarea {
+        width: 100%;
+        border: 1px solid var(--border);
+        background: white;
+        color: var(--text);
+        border-radius: 15px;
+        padding: 14px 15px;
+        font-size: 16px;
+        outline: none;
+      }
+      input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(37, 99, 235, .12); }
+      textarea { resize: vertical; min-height: 90px; }
+      .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+      button {
+        border: 0;
+        border-radius: 16px;
+        padding: 15px 18px;
+        font-weight: 900;
+        font-size: 16px;
+        color: white;
+        background: var(--primary);
+        cursor: pointer;
+      }
+      button:hover { background: var(--primary-dark); }
+      button:disabled { opacity: .55; cursor: not-allowed; }
+      .status {
+        display: none;
+        border-radius: 16px;
+        padding: 14px 15px;
+        font-weight: 800;
+        line-height: 1.45;
+      }
+      .status.ok { display: block; background: #dcfce7; color: var(--ok); }
+      .status.bad { display: block; background: #fee2e2; color: var(--bad); }
+      .small { color: var(--muted); font-size: 14px; line-height: 1.45; }
+      .site-logo { width: 220px; max-width: 100%; background: #fff; border-radius: 16px; padding: 8px 12px; border: 1px solid var(--border); box-shadow: 0 10px 24px rgba(15,23,42,.08); margin-bottom: 16px; }
+      footer { margin-top: 24px; color: var(--muted); text-align: center; }
+      @media (max-width: 860px) {
+        header, main, .row { grid-template-columns: 1fr; }
+        .hero { padding: 26px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <section class="hero">
+          <img class="site-logo" src="/assets/prague-ai-voice-logo.svg?v=190" alt="Prague AI Voice" />
+          <span class="eyebrow">Online rezervace</span>
+          <div style="margin-bottom:16px">
+            <label style="max-width:420px">Vybraná firma
+              <select id="businessSlug"></select>
+            </label>
+          </div>
+          <h1 id="companyTitle">Rezervace termínu</h1>
+          <p class="lead" id="companyDescription">Vyberte službu, datum a volný čas. Rezervace bude uložena do systému.</p>
+        </section>
+        <aside class="info card">
+          <strong>Rychlá rezervace</strong>
+          <span class="pill" id="currencyPill">Kč</span>
+          <p class="small" id="openingInfo">Načítám otevírací dobu...</p>
+        </aside>
+      </header>
+
+      <main>
+        <section class="card">
+          <h2>Služby</h2>
+          <div id="services" class="services"></div>
+        </section>
+
+        <section class="card">
+          <h2>Rezervační formulář</h2>
+          <form id="bookingForm">
+            <label>
+              Služba
+              <select id="serviceName" required></select>
+            </label>
+            <div class="row">
+              <label>
+                Datum
+                <input id="date" type="date" required />
+              </label>
+              <label>
+                Volný čas
+                <select id="time" required>
+                  <option value="">Nejprve vyberte datum</option>
+                </select>
+              </label>
+            </div>
+            <div class="row">
+              <label>
+                Jméno
+                <input id="customerName" autocomplete="name" placeholder="Jan Novák" required />
+              </label>
+              <label>
+                Telefon
+                <input id="customerPhone" autocomplete="tel" placeholder="+420 111 222 333" required />
+              </label>
+            </div>
+            <label>
+              E-mail pro potvrzení
+              <input id="customerEmail" type="email" autocomplete="email" placeholder="jan@example.com" />
+            </label>
+            <label>
+              Poznámka
+              <textarea id="note" placeholder="Nepovinné"></textarea>
+            </label>
+            <div id="status" class="status"></div>
+            <button id="submitBtn" type="submit">Odeslat rezervaci</button>
+            <p class="small">Po odeslání se rezervace uloží do systému. Pokud je nastaven SMTP a zadáte e-mail, přijde automatické potvrzení.</p>
+          </form>
+        </section>
+      </main>
+      <footer>Powered by Prague AI Voice</footer>
+    </div>
+
+    <script>
+      const state = { profile: null, businesses: [], businessSlug: currentBusinessSlug() };
+
+      function currentBusinessSlug() {
+        const params = new URLSearchParams(window.location.search);
+        const fromQuery = params.get('business') || params.get('businessSlug');
+        const pathMatch = window.location.pathname.match(/^\/booking\/([^/?#]+)/);
+        return (fromQuery || (pathMatch && pathMatch[1]) || 'studio-aurora').toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      }
+
+      function apiUrl(path) {
+        const join = path.includes('?') ? '&' : '?';
+        return `${path}${join}businessSlug=${encodeURIComponent(state.businessSlug)}`;
+      }
+      const el = (id) => document.getElementById(id);
+
+      function todayIso() {
+        const d = new Date();
+        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        return d.toISOString().slice(0, 10);
+      }
+
+      function showStatus(kind, text) {
+        const node = el('status');
+        node.className = `status ${kind}`;
+        node.textContent = text;
+      }
+
+      function serviceLabel(service) {
+        return `${service.name} — ${service.price || ''} / ${service.duration || ''}`;
+      }
+
+      async function loadBusinesses() {
+        const res = await fetch('/api/businesses');
+        const data = await res.json();
+        state.businesses = data.ok ? (data.businesses || []) : [];
+        const select = el('businessSlug');
+        select.innerHTML = state.businesses.map((business) => `<option value="${business.slug}">${business.companyName}</option>`).join('');
+        if (!state.businesses.some((business) => business.slug === state.businessSlug) && state.businesses.length) {
+          state.businessSlug = state.businesses[0].slug;
+        }
+        select.value = state.businessSlug;
+      }
+
+      async function loadProfile() {
+        const res = await fetch(apiUrl('/api/business-profile'));
+        const data = await res.json();
+        if (!data.ok) throw new Error('Profil se nepodařilo načíst.');
+        state.profile = data.profile;
+        el('companyTitle').textContent = data.profile.companyName || 'Rezervace termínu';
+        el('companyDescription').textContent = data.profile.description || 'Vyberte službu, datum a volný čas.';
+        el('currencyPill').textContent = data.profile.currency || 'Kč';
+        el('openingInfo').textContent = (data.profile.openingHours || []).map((item) => `${item.days}: ${item.hours}`).join(' · ');
+
+        const serviceSelect = el('serviceName');
+        serviceSelect.innerHTML = '';
+        const services = (data.profile.services || []).filter((service) => service.bookingEnabled !== false);
+        for (const service of services) {
+          const option = document.createElement('option');
+          option.value = service.name;
+          option.textContent = serviceLabel(service);
+          serviceSelect.appendChild(option);
+        }
+        el('services').innerHTML = services.map((service) => `
+          <article class="service">
+            <h3>${service.name}</h3>
+            <p>${service.description || ''}</p>
+            <p><strong>${service.price || ''}</strong> · ${service.duration || ''}</p>
+          </article>
+        `).join('');
+        el('date').min = todayIso();
+      }
+
+      async function loadSlots() {
+        const serviceName = el('serviceName').value;
+        const date = el('date').value;
+        const time = el('time');
+        time.innerHTML = '<option value="">Načítám...</option>';
+        if (!serviceName || !date) {
+          time.innerHTML = '<option value="">Nejprve vyberte datum</option>';
+          return;
+        }
+        const url = apiUrl(`/api/bookings/slots?serviceName=${encodeURIComponent(serviceName)}&date=${encodeURIComponent(date)}`);
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!data.ok || !data.slots || data.slots.length === 0) {
+          time.innerHTML = '<option value="">Žádný volný čas</option>';
+          return;
+        }
+        time.innerHTML = '<option value="">Vyberte čas</option>' + data.slots.map((slot) => `<option value="${slot}">${slot}</option>`).join('');
+      }
+
+      async function submitBooking(event) {
+        event.preventDefault();
+        const submit = el('submitBtn');
+        submit.disabled = true;
+        try {
+          const payload = {
+            businessSlug: state.businessSlug,
+            serviceName: el('serviceName').value,
+            customerName: el('customerName').value,
+            customerPhone: el('customerPhone').value,
+            customerEmail: el('customerEmail').value,
+            date: el('date').value,
+            time: el('time').value,
+            note: el('note').value,
+          };
+          const res = await fetch('/api/bookings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.ok) throw new Error(data.message || 'Rezervace se nepodařila.');
+          showStatus('ok', `Rezervace byla uložena: ${data.booking.serviceName}, ${data.booking.date} v ${data.booking.time}.`);
+          el('bookingForm').reset();
+          el('date').min = todayIso();
+          await loadProfile();
+          await loadSlots();
+        } catch (error) {
+          showStatus('bad', error.message || 'Rezervace se nepodařila.');
+        } finally {
+          submit.disabled = false;
+        }
+      }
+
+      el('businessSlug').addEventListener('change', async () => {
+        state.businessSlug = el('businessSlug').value;
+        const nextUrl = `/booking/${encodeURIComponent(state.businessSlug)}`;
+        window.history.replaceState({}, '', nextUrl);
+        await loadProfile();
+        await loadSlots();
+      });
+      el('serviceName').addEventListener('change', loadSlots);
+      el('date').addEventListener('change', loadSlots);
+      el('bookingForm').addEventListener('submit', submitBooking);
+      loadBusinesses().then(loadProfile).then(loadSlots).catch((error) => showStatus('bad', error.message));
+    </script>
+  </body>
+</html>

@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: prague-ai-voice
+    env: docker
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: POC_MAX_SESSION_SECONDS
+        value: 480
+      - key: LOG_LEVEL
+        value: info
+      - key: AGENT_MODE
+        value: local
+      - key: EDGE_TTS_PYTHON
+        value: /usr/bin/python3
+      - key: DATABASE_URL
+        sync: false

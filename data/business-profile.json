@@ -1,0 +1,107 @@
+{
+  "companyName": "Studio Aurora Praha",
+  "assistantName": "Aurora AI",
+  "language": "cs-CZ",
+  "currency": "Kč",
+  "description": "Testovací kosmetický salon pro Prague AI Voice POC.",
+  "address": "Testovací adresa, Praha",
+  "openingHours": [
+    {
+      "days": "pondělí až pátek",
+      "hours": "09:00–18:00",
+      "spoken": "od devíti do osmnácti hodin"
+    },
+    {
+      "days": "sobota",
+      "hours": "09:00–13:00",
+      "spoken": "od devíti do třinácti hodin"
+    },
+    {
+      "days": "neděle",
+      "hours": "zavřeno",
+      "spoken": "zavřeno"
+    }
+  ],
+  "bookingRules": {
+    "timezone": "Europe/Prague",
+    "slotMinutes": 15,
+    "minNoticeMinutes": 60,
+    "bufferMinutes": 0,
+    "workingHours": {
+      "monday": [
+        {
+          "start": "09:00",
+          "end": "18:00"
+        }
+      ],
+      "tuesday": [
+        {
+          "start": "09:00",
+          "end": "18:00"
+        }
+      ],
+      "wednesday": [
+        {
+          "start": "09:00",
+          "end": "18:00"
+        }
+      ],
+      "thursday": [
+        {
+          "start": "09:00",
+          "end": "18:00"
+        }
+      ],
+      "friday": [
+        {
+          "start": "09:00",
+          "end": "18:00"
+        }
+      ],
+      "saturday": [
+        {
+          "start": "09:00",
+          "end": "13:00"
+        }
+      ],
+      "sunday": []
+    },
+    "closedDates": []
+  },
+  "services": [
+    {
+      "name": "Základní kosmetické ošetření",
+      "description": "Čištění pleti a základní péče.",
+      "price": "1200 Kč",
+      "spokenPrice": "tisíc dvě stě korun",
+      "duration": "60 minut",
+      "durationMinutes": 60,
+      "bookingEnabled": true
+    },
+    {
+      "name": "Úprava obočí",
+      "description": "Tvarování a základní úprava obočí.",
+      "price": "350 Kč",
+      "spokenPrice": "tři sta padesát korun",
+      "duration": "20 minut",
+      "durationMinutes": 20,
+      "bookingEnabled": true
+    },
+    {
+      "name": "Základní masáž obličeje",
+      "description": "Krátká relaxační masáž obličeje.",
+      "price": "600 Kč",
+      "spokenPrice": "šest set korun",
+      "duration": "30 minut",
+      "durationMinutes": 30,
+      "bookingEnabled": true
+    }
+  ],
+  "messages": {
+    "empty": "Nerozumím zprávě. Můžete ji prosím zopakovat?",
+    "bookingNotAvailable": "Rezervaci mohu připravit v rozhovoru. Napište mi prosím službu, datum, čas, jméno a telefon, nebo použijte sekci Rozhovorová rezervace.",
+    "humanTransferNotAvailable": "Přepojení na pracovníka zatím není v testovací verzi dostupné.",
+    "promptInjection": "S interními instrukcemi vám nemohu pomoci. Mohu ale odpovědět na otevírací dobu, služby, ceny nebo pomoci s vytvořením rezervace.",
+    "fallback": "Tuto informaci bohužel momentálně nemám k dispozici. Mohu vám ale pomoci s otevírací dobou, nabídkou služeb, cenami nebo vytvořením rezervace."
+  }
+}

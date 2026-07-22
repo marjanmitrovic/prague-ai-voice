@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=190" />
+  <link rel="apple-touch-icon" href="/assets/prague-ai-voice-icon-192.png?v=190" />
+  <link rel="manifest" href="/site.webmanifest?v=190" />
+  <meta name="theme-color" content="#10cfd0" />
+  <title>Správa klientů — Prague AI Voice</title>
+  <style>
+    :root{--bg:#f4f7fb;--panel:#fff;--text:#122033;--muted:#64748b;--border:#dbe3ee;--primary:#2563eb;--primary-dark:#1d4ed8;--good:#0f8a3b;--warn:#b45309;--danger:#b91c1c;--radius:18px;--shadow:0 18px 45px rgba(15,23,42,.08)}
+    *{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--text);background:radial-gradient(circle at top left,rgba(37,99,235,.12),transparent 32rem),linear-gradient(180deg,#f8fbff 0%,var(--bg) 100%);line-height:1.5}a{color:var(--primary);text-decoration:none;font-weight:700}.button-like{display:inline-flex;align-items:center;justify-content:center;border-radius:12px;padding:10px 14px;background:#e8eef8;color:var(--text);border:1px solid var(--border)}button,input,select{font:inherit}button{border:0;border-radius:12px;padding:10px 14px;cursor:pointer;color:#fff;background:var(--primary)}button:hover{background:var(--primary-dark)}button.secondary{color:var(--text);background:#e8eef8}button.danger{background:var(--danger)}input,select{width:100%;border:1px solid var(--border);border-radius:12px;background:#fff;padding:10px 12px;color:var(--text)}.wrap{max-width:1180px;margin:0 auto;padding:28px}.top{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:22px}.top h1{margin:0;font-size:34px;letter-spacing:-.04em}.site-logo{width:220px;max-width:100%;background:#fff;border-radius:16px;padding:8px 12px;border:1px solid var(--border);box-shadow:0 10px 24px rgba(15,23,42,.08);margin-bottom:14px}.top p{margin:8px 0 0;color:var(--muted)}.actions{display:flex;gap:10px;flex-wrap:wrap}.panel{background:rgba(255,255,255,.92);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:18px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 10px 28px rgba(15,23,42,.05)}.card h3{margin:0 0 6px}.small{font-size:14px;color:var(--muted)}.pill{display:inline-flex;align-items:center;padding:4px 9px;border-radius:999px;background:#ecfdf5;color:#047857;font-size:12px;font-weight:800}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{flex:1}.links{display:grid;gap:8px;margin-top:12px}.linkbox{border:1px dashed var(--border);border-radius:12px;padding:10px;background:#f8fafc;word-break:break-all}.status{font-weight:800}.ok{color:var(--good)}.warn{color:var(--warn)}pre{background:#0f172a;color:#e5eefc;padding:14px;overflow:auto;border-radius:14px;min-height:120px;font-size:13px;white-space:pre-wrap}.table{width:100%;border-collapse:collapse}.table th,.table td{border-bottom:1px solid var(--border);padding:10px;text-align:left;font-size:14px}.table th{color:var(--muted);font-weight:800}.empty{border:1px dashed var(--border);border-radius:14px;padding:18px;color:var(--muted);background:#f8fafc}@media(max-width:900px){.top{display:block}.grid{grid-template-columns:1fr}.actions{margin-top:14px}.row{display:block}.row>*{margin-bottom:10px}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="top">
+      <div>
+        <img class="site-logo" src="/assets/prague-ai-voice-logo.svg?v=190" alt="Prague AI Voice" />
+        <h1>Správa klientů</h1>
+        <p>Rychlý přehled všech firem v aplikaci, rezervačních odkazů a posledních rezervací.</p>
+      </div>
+      <div class="actions">
+        <a href="/" class="button-like">Dashboard</a>
+        <a href="/onboarding" class="button-like">Přidat klienta</a>
+        <a href="/sales" class="button-like">Prodejní stránka</a>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Administrátorský přístup</h2>
+      <p class="small">Pro přehled rezervací, export CSV a zálohu použijte stejné heslo jako v proměnné <b>ADMIN_PASSWORD</b> na Renderu.</p>
+      <div class="row">
+        <label>Administrátorské heslo<input id="adminPassword" type="password" placeholder="ADMIN_PASSWORD" /></label>
+        <div><button id="unlockBtn">Odemknout</button></div>
+      </div>
+      <p id="authStatus" class="status warn">Zamčeno.</p>
+    </section>
+
+    <section class="panel">
+      <div class="row">
+        <div>
+          <h2>Klienti</h2>
+          <p class="small">Klikněte na klienta pro načtení jeho rezervací.</p>
+        </div>
+        <div><button id="refreshBtn" class="secondary">Obnovit seznam</button></div>
+      </div>
+      <div id="businessesGrid" class="grid"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Vybraný klient</h2>
+      <div id="selectedBox" class="empty">Zatím není vybrán žádný klient.</div>
+    </section>
+
+    <section class="panel">
+      <div class="row">
+        <div>
+          <h2>Rezervace klienta</h2>
+          <p class="small">Tento přehled je chráněný administrátorským heslem.</p>
+        </div>
+        <div><button id="loadBookingsBtn" class="secondary">Načíst rezervace</button></div>
+      </div>
+      <div id="bookingsBox" class="empty">Vyberte klienta a zadejte heslo.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Technický výstup</h2>
+      <pre id="debugOutput">Připraveno.</pre>
+    </section>
+  </main>
+
+  <script>
+    const adminPassword = document.getElementById('adminPassword');
+    const unlockBtn = document.getElementById('unlockBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const loadBookingsBtn = document.getElementById('loadBookingsBtn');
+    const authStatus = document.getElementById('authStatus');
+    const businessesGrid = document.getElementById('businessesGrid');
+    const selectedBox = document.getElementById('selectedBox');
+    const bookingsBox = document.getElementById('bookingsBox');
+    const debugOutput = document.getElementById('debugOutput');
+
+    let selectedBusiness = null;
+    let adminPasswordValue = sessionStorage.getItem('pragueAiVoiceAdminPassword') || '';
+    adminPassword.value = adminPasswordValue;
+
+    function adminHeaders(extra = {}) {
+      return adminPasswordValue ? { ...extra, 'x-admin-password': adminPasswordValue } : extra;
+    }
+
+    function jsonDebug(label, value) {
+      debugOutput.textContent = label + '\n' + JSON.stringify(value, null, 2);
+    }
+
+    function fullUrl(path) {
+      return new URL(path, window.location.origin).toString();
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        debugOutput.textContent = 'Zkopírováno do schránky:\n' + text;
+      } catch {
+        debugOutput.textContent = 'Nepodařilo se kopírovat. Odkaz:\n' + text;
+      }
+    }
+
+    async function adminLogin() {
+      const value = adminPassword.value.trim();
+      if (!value) {
+        authStatus.textContent = 'Zadejte administrátorské heslo.';
+        authStatus.className = 'status warn';
+        return;
+      }
+      const res = await fetch('/api/admin/login', { method: 'POST', headers: { 'x-admin-password': value } });
+      const data = await res.json();
+      if (!data.ok) {
+        authStatus.textContent = 'Heslo není správné.';
+        authStatus.className = 'status warn';
+        jsonDebug('Chyba přihlášení', data);
+        return;
+      }
+      adminPasswordValue = value;
+      sessionStorage.setItem('pragueAiVoiceAdminPassword', value);
+      authStatus.textContent = 'Administrace je odemčená.';
+      authStatus.className = 'status ok';
+      jsonDebug('Přihlášení', data);
+      if (selectedBusiness) loadBookings();
+    }
+
+    async function loadBusinesses() {
+      businessesGrid.innerHTML = '<div class="empty">Načítám klienty…</div>';
+      const res = await fetch('/api/businesses');
+      const data = await res.json();
+      if (!data.ok) {
+        businessesGrid.innerHTML = '<div class="empty">Seznam klientů se nepodařilo načíst.</div>';
+        jsonDebug('Chyba', data);
+        return;
+      }
+      businessesGrid.innerHTML = '';
+      for (const business of data.businesses || []) {
+        const bookingPath = `/booking/${business.slug}`;
+        const bookingUrl = fullUrl(bookingPath);
+        const card = document.createElement('article');
+        card.className = 'card';
+        card.innerHTML = `
+          <span class="pill">${business.slug}</span>
+          <h3>${business.companyName}</h3>
+          <p class="small">${business.description || 'Bez popisu.'}</p>
+          <p><b>Služby:</b> ${business.servicesCount ?? 0}</p>
+          <div class="links">
+            <div class="linkbox">${bookingUrl}</div>
+            <button data-action="select">Vybrat klienta</button>
+            <button class="secondary" data-action="open">Otevřít rezervaci</button>
+            <button class="secondary" data-action="copy">Kopírovat odkaz</button>
+          </div>
+        `;
+        card.querySelector('[data-action="select"]').addEventListener('click', () => selectBusiness(business));
+        card.querySelector('[data-action="open"]').addEventListener('click', () => window.open(bookingPath, '_blank'));
+        card.querySelector('[data-action="copy"]').addEventListener('click', () => copyText(bookingUrl));
+        businessesGrid.appendChild(card);
+      }
+      if (!data.businesses?.length) businessesGrid.innerHTML = '<div class="empty">Zatím není vytvořen žádný klient.</div>';
+      jsonDebug('Klienti načteni', data);
+    }
+
+    function selectBusiness(business) {
+      selectedBusiness = business;
+      const bookingPath = `/booking/${business.slug}`;
+      const csvPath = `/api/bookings/export.csv?businessSlug=${encodeURIComponent(business.slug)}`;
+      const backupPath = `/api/system/backup.json?businessSlug=${encodeURIComponent(business.slug)}`;
+      selectedBox.innerHTML = `
+        <div class="card">
+          <span class="pill">${business.slug}</span>
+          <h3>${business.companyName}</h3>
+          <p class="small">${business.description || 'Bez popisu.'}</p>
+          <div class="links">
+            <div><b>Veřejná rezervace:</b><div class="linkbox">${fullUrl(bookingPath)}</div></div>
+            <button onclick="window.open('${bookingPath}', '_blank')">Otevřít veřejnou rezervaci</button>
+            <button class="secondary" id="copySelectedBtn">Kopírovat rezervační odkaz</button>
+            <button class="secondary" id="csvBtn">Stáhnout CSV</button>
+            <button class="secondary" id="backupBtn">Stáhnout zálohu JSON</button>
+          </div>
+        </div>
+      `;
+      document.getElementById('copySelectedBtn').addEventListener('click', () => copyText(fullUrl(bookingPath)));
+      document.getElementById('csvBtn').addEventListener('click', () => window.open(csvPath, '_blank'));
+      document.getElementById('backupBtn').addEventListener('click', () => window.open(backupPath, '_blank'));
+      bookingsBox.innerHTML = '<div class="empty">Klient vybrán. Klikněte na „Načíst rezervace“.</div>';
+      jsonDebug('Vybraný klient', business);
+    }
+
+    function renderBookings(bookings) {
+      if (!bookings.length) {
+        bookingsBox.innerHTML = '<div class="empty">Tento klient zatím nemá žádné rezervace.</div>';
+        return;
+      }
+      const rows = bookings.map((b) => `
+        <tr>
+          <td>${b.date || ''} ${b.time || ''}</td>
+          <td>${b.serviceName || ''}</td>
+          <td>${b.customerName || ''}</td>
+          <td>${b.customerPhone || ''}</td>
+          <td>${b.customerEmail || ''}</td>
+          <td>${b.status || ''}</td>
+        </tr>
+      `).join('');
+      bookingsBox.innerHTML = `
+        <table class="table">
+          <thead><tr><th>Termín</th><th>Služba</th><th>Jméno</th><th>Telefon</th><th>E-mail</th><th>Stav</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    async function loadBookings() {
+      if (!selectedBusiness) {
+        bookingsBox.innerHTML = '<div class="empty">Nejprve vyberte klienta.</div>';
+        return;
+      }
+      if (!adminPasswordValue) {
+        bookingsBox.innerHTML = '<div class="empty">Zadejte administrátorské heslo.</div>';
+        return;
+      }
+      const url = `/api/bookings?businessSlug=${encodeURIComponent(selectedBusiness.slug)}`;
+      const res = await fetch(url, { headers: adminHeaders() });
+      const data = await res.json();
+      if (!data.ok) {
+        bookingsBox.innerHTML = '<div class="empty">Rezervace se nepodařilo načíst. Zkontrolujte heslo.</div>';
+        jsonDebug('Chyba rezervací', data);
+        return;
+      }
+      renderBookings(data.bookings || []);
+      jsonDebug('Rezervace načteny', data);
+    }
+
+    unlockBtn.addEventListener('click', adminLogin);
+    refreshBtn.addEventListener('click', loadBusinesses);
+    loadBookingsBtn.addEventListener('click', loadBookings);
+    adminPassword.addEventListener('keydown', (e) => { if (e.key === 'Enter') adminLogin(); });
+
+    if (adminPasswordValue) {
+      authStatus.textContent = 'Heslo je uložené pro tuto relaci. Klikněte na Odemknout pro ověření.';
+      authStatus.className = 'status warn';
+    }
+    loadBusinesses();
+  </script>
+</body>
+</html>

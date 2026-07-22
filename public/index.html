@@ -1,0 +1,1124 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=190" />
+  <link rel="apple-touch-icon" href="/assets/prague-ai-voice-icon-192.png?v=190" />
+  <link rel="manifest" href="/site.webmanifest?v=190" />
+  <meta name="theme-color" content="#10cfd0" />
+  <title>Prague AI Voice — česká administrace</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --panel-2: #f8fafc;
+      --text: #122033;
+      --muted: #64748b;
+      --border: #dbe3ee;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --good: #0f8a3b;
+      --warn: #b45309;
+      --danger: #b91c1c;
+      --shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 32rem),
+        linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
+      line-height: 1.5;
+    }
+    button, input, textarea, select { font: inherit; }
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      cursor: pointer;
+      color: #fff;
+      background: var(--primary);
+      transition: transform 0.12s ease, background 0.12s ease, opacity 0.12s ease;
+    }
+    button:hover { background: var(--primary-dark); transform: translateY(-1px); }
+    button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+    button.secondary { color: var(--text); background: #e8eef8; }
+    button.secondary:hover { background: #dce7f7; }
+    button.ghost { color: var(--primary); background: transparent; border: 1px solid var(--border); }
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      padding: 10px 12px;
+      color: var(--text);
+      outline: none;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(37,99,235,0.12); }
+    textarea { min-height: 88px; resize: vertical; }
+    pre {
+      background: #0f172a;
+      color: #e5eefc;
+      padding: 14px;
+      overflow: auto;
+      border-radius: 14px;
+      min-height: 130px;
+      font-size: 13px;
+      white-space: pre-wrap;
+    }
+    code { background: #eef4ff; color: #1d4ed8; padding: 2px 6px; border-radius: 7px; }
+    .app-shell { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 100vh; }
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 24px 18px;
+      background: rgba(255,255,255,0.78);
+      backdrop-filter: blur(14px);
+      border-right: 1px solid var(--border);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .brand-mark {
+      width: 54px; height: 54px;
+      border-radius: 16px;
+      object-fit: contain;
+      background: #fff;
+      padding: 5px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .brand h1 { font-size: 18px; line-height: 1.15; margin: 0; }
+    .brand-full-logo { width: 100%; max-width: 230px; margin: 0 0 18px; display: block; }
+    .brand p { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
+    .nav { display: grid; gap: 8px; margin: 18px 0 26px; }
+    .nav button {
+      text-align: left;
+      color: var(--text);
+      background: transparent;
+      border: 1px solid transparent;
+      padding: 11px 12px;
+    }
+    .nav button.active { background: #eaf1ff; border-color: #c7d8ff; color: #1d4ed8; }
+    .side-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+      padding: 14px;
+      box-shadow: 0 10px 26px rgba(15,23,42,0.05);
+    }
+    .content { padding: 28px; min-width: 0; }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+    .topbar h2 { margin: 0; font-size: 28px; letter-spacing: -0.03em; }
+    .topbar p { margin: 6px 0 0; color: var(--muted); max-width: 780px; }
+    .status-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 22px; }
+    .metric {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: 0 10px 28px rgba(15,23,42,0.05);
+    }
+    .metric span { display: block; color: var(--muted); font-size: 13px; margin-bottom: 4px; }
+    .metric strong { font-size: 15px; }
+    .view { display: none; }
+    .view.active { display: block; }
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin: 0 0 18px;
+      background: rgba(255,255,255,0.92);
+      box-shadow: var(--shadow);
+    }
+    .panel h2, .panel h3 { margin: 0 0 10px; letter-spacing: -0.02em; }
+    .small { font-size: 14px; color: var(--muted); }
+    .ok { color: var(--good); font-weight: 700; }
+    .warn { color: var(--warn); font-weight: 700; }
+    .row { margin: 12px 0; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    label { display: block; font-weight: 650; font-size: 14px; margin: 10px 0 4px; }
+    .profile-list { display: grid; gap: 10px; }
+    .pill { display:inline-flex; align-items:center; gap:6px; padding: 4px 9px; border-radius: 999px; background:#ecfdf5; color:#047857; font-size:12px; font-weight:700; }
+    .hero-actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .assistant-box { display:grid; grid-template-columns: minmax(0,1fr) 320px; gap: 18px; }
+    .muted-box { background: var(--panel-2); border: 1px dashed var(--border); border-radius: 14px; padding: 12px; }
+    .chat-box { display: grid; gap: 10px; max-height: 360px; overflow: auto; padding: 10px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel-2); }
+    .chat-message { max-width: 86%; border-radius: 14px; padding: 10px 12px; white-space: pre-wrap; }
+    .chat-message.user { justify-self: end; background: #dbeafe; color: #0f172a; }
+    .chat-message.assistant { justify-self: start; background: #fff; border: 1px solid var(--border); }
+    .state-chip { display:inline-block; padding:3px 8px; border-radius:999px; background:#eef4ff; color:#1d4ed8; font-size:12px; font-weight:700; }
+    .admin-lock { border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 16px; padding: 14px; margin-bottom: 16px; }
+    .admin-locked .admin-protected { opacity: 0.45; pointer-events: none; filter: grayscale(0.2); }
+    .admin-unlocked-note { display:none; }
+    body.admin-authenticated .admin-unlocked-note { display:block; }
+
+    @media (max-width: 980px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; }
+      .nav { grid-template-columns: repeat(2, 1fr); }
+      .content { padding: 18px; }
+      .status-grid, .assistant-box { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 700px) {
+      .grid, .grid3 { grid-template-columns: 1fr; }
+      .topbar { display:block; }
+      .hero-actions { justify-content:flex-start; margin-top:12px; }
+      .nav { grid-template-columns: 1fr; }
+    }
+  
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(37, 99, 235, 0.18);
+      color: #1d4ed8;
+      background: rgba(219, 234, 254, 0.72);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+    }
+</style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <img class="brand-full-logo" src="/assets/prague-ai-voice-logo.svg?v=190" alt="Prague AI Voice" />
+      <div class="brand">
+        <div>
+          <h1>Prague AI Voice</h1>
+          <p>1.9.0 Česká verze</p>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Sekce aplikace">
+        <button class="active" data-target="dashboardView">Přehled</button>
+        <button data-target="assistantView">Agent a hlas</button>
+        <button data-target="bookingsView">Rezervace</button>
+        <a class="nav-link" href="/booking" target="_blank" rel="noreferrer">Veřejná rezervace</a>
+        <a class="nav-link" href="/admin/clients" target="_blank" rel="noreferrer">Správa klientů</a>
+        <a class="nav-link" href="/onboarding" target="_blank" rel="noreferrer">Přidat klienta</a>
+        <button data-target="profileView">Profil firmy</button>
+        <button data-target="adminView">Admin editor</button>
+        <button data-target="logsView">Logy</button>
+      </nav>
+      <div class="side-card">
+        <div class="small">Režim projektu</div>
+        <p><b>Bez Twilia, bez Supabase a bez nákladů na OpenAI.</b></p>
+        <p class="small">Lokální agent + Neon databáze + ochrana administrace + český neuralní TTS. Verze 1.9.0.</p>
+      </div>
+    </aside>
+
+    <main class="content">
+      <section class="topbar">
+        <div>
+          <h2>Ovládací panel <span class="pill">1.9.0</span></h2>
+          <p>Otestujte lokálního AI recepčního, ověřte hlas, spravujte služby a rezervace z jednoho rozhraní.</p>
+        </div>
+        <div class="hero-actions">
+          <button id="reloadProfileBtn" class="secondary">Znovu načíst profil</button>
+          <button id="connectBtn" class="ghost">Připojit WebSocket</button>
+        </div>
+      </section>
+
+      <section class="status-grid">
+        <div class="metric"><span>WebSocket</span><strong id="status">nepřipojeno</strong></div>
+        <div class="metric"><span>Agent</span><strong id="aiStatus">kontroluji...</strong></div>
+        <div class="metric"><span>Český hlas</span><strong id="voiceStatus">kontroluji TTS...</strong></div>
+        <div class="metric"><span>Stav dema</span><strong id="systemStatus">kontroluji...</strong></div>
+      </section>
+
+      <section id="dashboardView" class="view active">
+        <div class="assistant-box">
+          <div class="panel">
+            <h2>Rychlý test agenta</h2>
+            <p class="small">Pošlete dotaz jako zákazník salonu. Odpověď se přečte českým neuralním hlasem.</p>
+            <label for="textInput">Zpráva zákazníka</label>
+            <textarea id="textInput">Dobrý den, kdy máte otevřeno?</textarea>
+            <div class="row">
+              <button id="sendAiBtn">Odeslat lokálnímu agentovi</button>
+              <button id="speakLastBtn" class="secondary" disabled>Přehrát poslední odpověď</button>
+              <button id="sendTextBtn" class="ghost" disabled>Odeslat přes WebSocket</button>
+            </div>
+            <h3>Poslední odpověď</h3>
+            <pre id="assistantOutput"></pre>
+          </div>
+          <div class="panel">
+            <h2>Aktivní profil</h2>
+            <div id="businessProfile">načítám profil...</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="assistantView" class="view">
+        <div class="panel">
+          <h2>Český hlas</h2>
+          <p class="small">Používá se český neuralní hlas přes <code>python -m edge_tts</code>. Hlas v prohlížeči je pouze záložní možnost.</p>
+          <label for="voiceSelect">Český hlas</label>
+          <select id="voiceSelect">
+            <option value="cs-CZ-VlastaNeural">Vlasta Neural — ženský</option>
+            <option value="cs-CZ-AntoninNeural">Antonín Neural — mužský</option>
+          </select>
+          <div class="row">
+            <button id="testVoiceBtn">Test českého neuralního hlasu</button>
+            <button id="browserVoiceBtn" class="secondary">Záloha: hlas prohlížeče</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>Konverzační rezervace</h2>
+          <p class="small">Agent může zákazníka vést krok za krokem nebo rozpoznat údaje z jedné věty: službu, datum, čas, jméno a telefon. Po potvrzení se rezervace uloží do databáze Neon PostgreSQL.</p>
+          <div class="row">
+            <span class="state-chip">Stav: <span id="conversationStage">nespuštěno</span></span>
+            <button id="startConversationBtn">Spustit rezervaci</button>
+            <button id="oneSentenceExampleBtn" class="ghost">Příklad jedné věty</button>
+            <button id="resetConversationBtn" class="secondary">Reset konverzace</button>
+          </div>
+          <div id="conversationChat" class="chat-box" aria-live="polite"></div>
+          <label for="conversationInput">Odpověď zákazníka</label>
+          <p class="small">Lze zadat i přirozeněji: <code>Chci základní kosmetické ošetření 15.8.2099 v 10 hodin, jmenuji se Jan Novák, telefon +420111222333</code></p>
+          <input id="conversationInput" type="text" placeholder="Např. Chci úpravu obočí zítra v 10 hodin, jmenuji se Jan Novák, telefon +420111222333" />
+          <div class="row">
+            <button id="sendConversationBtn">Odeslat do konverzace</button>
+            <button id="speakConversationBtn" class="secondary" disabled>Přehrát poslední odpověď</button>
+          </div>
+          <pre id="conversationStateOutput"></pre>
+        </div>
+
+        <div class="panel">
+          <h2>Test mikrofonu a WebSocketu</h2>
+          <p class="small">Toto testuje audio kanál a lokální log bez skutečného rozpoznávání řeči.</p>
+          <div class="row">
+            <button id="recordBtn" disabled>Start mikrofon</button>
+            <button id="stopBtn" class="secondary" disabled>Stop a uložit log</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="bookingsView" class="view">
+        <div class="panel">
+          <h2>Rezervace</h2>
+          <p class="small">Rezervace jsou uložené v databázi Neon PostgreSQL. Přehled a CSV export jsou chráněné administrátorským heslem.</p>
+          <div class="admin-lock">
+            <div class="grid">
+              <label>Administrátorské heslo pro přehled rezervací<input id="bookingsAdminPassword" type="password" placeholder="ADMIN_PASSWORD" /></label>
+              <label>&nbsp;<button id="bookingsLoginBtn" type="button">Odemknout přehled</button></label>
+            </div>
+            <div id="bookingsAuthStatus" class="small">Pro seznam rezervací a CSV export je nutné administrátorské heslo.</div>
+          </div>
+          <div class="grid3">
+            <label for="bookingService">Služba<select id="bookingService"></select></label>
+            <label for="bookingDate">Datum<input id="bookingDate" type="date" /></label>
+            <label for="bookingTime">Čas<input id="bookingTime" type="time" /></label>
+          </div>
+          <div class="grid">
+            <label for="bookingName">Jméno klienta<input id="bookingName" type="text" value="Testovací klient" /></label>
+            <label for="bookingPhone">Telefon<input id="bookingPhone" type="text" value="+420111222333" /></label>
+          </div>
+          <label for="bookingEmail">E-mail pro potvrzení</label>
+          <input id="bookingEmail" type="email" value="" placeholder="klient@example.com" />
+          <label for="bookingNote">Poznámka</label>
+          <textarea id="bookingNote">Testovací rezervace z webového POC.</textarea>
+          <div class="row">
+            <button id="checkAvailabilityBtn">Ověřit dostupnost</button>
+            <button id="loadSlotsBtn" class="secondary">Zobrazit volné termíny</button>
+            <button id="createBookingBtn">Uložit rezervaci</button>
+            <button id="refreshBookingsBtn" class="ghost">Obnovit rezervace</button>
+            <button id="exportBookingsBtn" class="secondary">Export CSV</button>
+          </div>
+          <div id="bookingResult" class="small muted-box"></div>
+        </div>
+        <div class="grid">
+          <div class="panel"><h2>Volné termíny</h2><pre id="slotsOutput"></pre></div>
+          <div class="panel"><h2>Rezervace</h2><pre id="bookingsOutput"></pre></div>
+        </div>
+      </section>
+
+      <section id="profileView" class="view">
+        <div class="panel">
+          <h2>Aktivní profil firmy</h2>
+          <p class="small">Tento profil používá lokální agent. Administrátorské změny se ukládají do databáze Neon PostgreSQL.</p>
+          <div id="businessProfileMirror" class="muted-box"></div>
+        </div>
+      </section>
+
+      <section id="adminView" class="view">
+        <div class="panel">
+          <h2>Admin editor profilu</h2>
+          <p class="small">Pro úpravy profilu nejdříve zadejte administrátorské heslo. Heslo se ukládá pouze v tomto prohlížeči.</p>
+          <div class="admin-lock">
+            <div class="grid">
+              <label>Administrátorské heslo<input id="adminPassword" type="password" placeholder="ADMIN_PASSWORD" /></label>
+              <label>&nbsp;<button id="adminLoginBtn" type="button">Odemknout editor</button></label>
+            </div>
+            <div id="adminAuthStatus" class="small">Editor je zamčený, dokud nezadáte administrátorské heslo.</div>
+          </div>
+          <div id="adminProtectedFields" class="admin-protected">
+          <div class="grid">
+            <label>Název firmy<input id="adminCompanyName" type="text" /></label>
+            <label>Jméno asistenta<input id="adminAssistantName" type="text" /></label>
+          </div>
+          <label>Popis firmy<textarea id="adminDescription"></textarea></label>
+          <label>Adresa<input id="adminAddress" type="text" /></label>
+          <div class="grid3">
+            <label>Pondělí–pátek<input id="adminWeekdayHours" type="text" placeholder="09:00–18:00" /></label>
+            <label>Sobota<input id="adminSaturdayHours" type="text" placeholder="09:00–13:00" /></label>
+            <label>Neděle<input id="adminSundayHours" type="text" placeholder="zavřeno" /></label>
+          </div>
+          <div class="grid3">
+            <label>Délka slotu v minutách<input id="adminSlotMinutes" type="number" min="5" max="120" /></label>
+            <label>Min. předem v minutách<input id="adminMinNotice" type="number" min="0" max="10080" /></label>
+            <label>Buffer v minutách<input id="adminBuffer" type="number" min="0" max="240" /></label>
+          </div>
+          <label>Služby — jedna služba na řádek</label>
+          <p class="small">Formát: <code>název | popis | cena | vyslovená cena | délka | minuty | aktivní</code></p>
+          <textarea id="adminServices" style="min-height: 150px"></textarea>
+          <label>Záložní zpráva<textarea id="adminFallback"></textarea></label>
+          <div class="row">
+            <button id="saveProfileBtn">Uložit profil</button>
+            <button id="resetEditorBtn" class="secondary">Vrátit data z aktivního profilu</button>
+          </div>
+          <div id="profileSaveResult" class="small muted-box"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="logsView" class="view">
+        <div class="grid">
+          <div class="panel"><h2>Log</h2><pre id="log"></pre></div>
+          <div class="panel"><h2>Demo checklist</h2><pre id="systemOutput">načítám stav...</pre></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script>
+    const statusEl = document.getElementById('status');
+    const aiStatusEl = document.getElementById('aiStatus');
+    const voiceStatusEl = document.getElementById('voiceStatus');
+    const systemStatusEl = document.getElementById('systemStatus');
+    const businessProfileEl = document.getElementById('businessProfile');
+    const reloadProfileBtn = document.getElementById('reloadProfileBtn');
+    const adminPassword = document.getElementById('adminPassword');
+    const adminLoginBtn = document.getElementById('adminLoginBtn');
+    const adminAuthStatus = document.getElementById('adminAuthStatus');
+    const adminProtectedFields = document.getElementById('adminProtectedFields');
+    const bookingsAdminPassword = document.getElementById('bookingsAdminPassword');
+    const bookingsLoginBtn = document.getElementById('bookingsLoginBtn');
+    const bookingsAuthStatus = document.getElementById('bookingsAuthStatus');
+    const adminCompanyName = document.getElementById('adminCompanyName');
+    const adminAssistantName = document.getElementById('adminAssistantName');
+    const adminDescription = document.getElementById('adminDescription');
+    const adminAddress = document.getElementById('adminAddress');
+    const adminWeekdayHours = document.getElementById('adminWeekdayHours');
+    const adminSaturdayHours = document.getElementById('adminSaturdayHours');
+    const adminSundayHours = document.getElementById('adminSundayHours');
+    const adminSlotMinutes = document.getElementById('adminSlotMinutes');
+    const adminMinNotice = document.getElementById('adminMinNotice');
+    const adminBuffer = document.getElementById('adminBuffer');
+    const adminServices = document.getElementById('adminServices');
+    const adminFallback = document.getElementById('adminFallback');
+    const saveProfileBtn = document.getElementById('saveProfileBtn');
+    const resetEditorBtn = document.getElementById('resetEditorBtn');
+    const profileSaveResult = document.getElementById('profileSaveResult');
+    const bookingService = document.getElementById('bookingService');
+    const bookingDate = document.getElementById('bookingDate');
+    const bookingTime = document.getElementById('bookingTime');
+    const bookingName = document.getElementById('bookingName');
+    const bookingPhone = document.getElementById('bookingPhone');
+    const bookingEmail = document.getElementById('bookingEmail');
+    const bookingNote = document.getElementById('bookingNote');
+    const checkAvailabilityBtn = document.getElementById('checkAvailabilityBtn');
+    const loadSlotsBtn = document.getElementById('loadSlotsBtn');
+    const createBookingBtn = document.getElementById('createBookingBtn');
+    const refreshBookingsBtn = document.getElementById('refreshBookingsBtn');
+    const exportBookingsBtn = document.getElementById('exportBookingsBtn');
+    const bookingResult = document.getElementById('bookingResult');
+    const bookingsOutput = document.getElementById('bookingsOutput');
+    const slotsOutput = document.getElementById('slotsOutput');
+    const voiceSelect = document.getElementById('voiceSelect');
+    const testVoiceBtn = document.getElementById('testVoiceBtn');
+    const browserVoiceBtn = document.getElementById('browserVoiceBtn');
+    const logEl = document.getElementById('log');
+    const systemOutput = document.getElementById('systemOutput');
+    const assistantOutputEl = document.getElementById('assistantOutput');
+    const connectBtn = document.getElementById('connectBtn');
+    const recordBtn = document.getElementById('recordBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const sendTextBtn = document.getElementById('sendTextBtn');
+    const sendAiBtn = document.getElementById('sendAiBtn');
+    const speakLastBtn = document.getElementById('speakLastBtn');
+    const conversationStage = document.getElementById('conversationStage');
+    const conversationChat = document.getElementById('conversationChat');
+    const conversationInput = document.getElementById('conversationInput');
+    const startConversationBtn = document.getElementById('startConversationBtn');
+    const oneSentenceExampleBtn = document.getElementById('oneSentenceExampleBtn');
+    const sendConversationBtn = document.getElementById('sendConversationBtn');
+    const resetConversationBtn = document.getElementById('resetConversationBtn');
+    const speakConversationBtn = document.getElementById('speakConversationBtn');
+    const conversationStateOutput = document.getElementById('conversationStateOutput');
+    const textInput = document.getElementById('textInput');
+
+    let ws;
+    let recorder;
+    let lastAssistantText = '';
+    let bookingConversationState = { stage: 'idle', fields: {} };
+    let lastConversationText = '';
+    let currentProfile = null;
+
+    let adminPasswordValue = sessionStorage.getItem('pragueAiVoiceAdminPassword') || '';
+    adminPassword.value = adminPasswordValue;
+    bookingsAdminPassword.value = adminPasswordValue;
+
+    function adminHeaders(extra = {}) {
+      return adminPasswordValue ? { ...extra, 'x-admin-password': adminPasswordValue } : extra;
+    }
+
+    async function adminFetch(url, options = {}) {
+      return fetch(url, {
+        ...options,
+        headers: adminHeaders(options.headers || {}),
+      });
+    }
+
+    function setAdminUi(authenticated) {
+      document.body.classList.toggle('admin-authenticated', authenticated);
+      document.body.classList.toggle('admin-locked', !authenticated);
+      adminAuthStatus.textContent = authenticated ? 'Editor je odemčený.' : 'Editor je zamčený. Zadejte ADMIN_PASSWORD z Render Environment.';
+      adminAuthStatus.className = authenticated ? 'small ok' : 'small warn';
+      bookingsAuthStatus.textContent = authenticated ? 'Administrátorský přehled rezervací je odemčený.' : 'Pro seznam rezervací a CSV export je nutné administrátorské heslo.';
+      bookingsAuthStatus.className = authenticated ? 'small ok' : 'small warn';
+    }
+
+    async function adminLogin(password) {
+      const value = String(password || '').trim();
+      if (!value) {
+        setAdminUi(false);
+        return false;
+      }
+      const res = await fetch('/api/admin/login', { method: 'POST', headers: { 'x-admin-password': value } });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data.message || data.error || 'přihlášení administrátora selhalo');
+      adminPasswordValue = value;
+      sessionStorage.setItem('pragueAiVoiceAdminPassword', value);
+      adminPassword.value = value;
+      bookingsAdminPassword.value = value;
+      setAdminUi(true);
+      return true;
+    }
+    bookingDate.value = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    bookingTime.value = '10:00';
+
+
+    function log(message, data) {
+      const line = data ? `${message} ${JSON.stringify(data)}` : message;
+      logEl.textContent += line + '\n';
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function wsUrl() {
+      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      return `${protocol}//${location.host}/ws/browser`;
+    }
+
+
+    function renderBusinessProfile(profile) {
+      const opening = profile.openingHours
+        .map((item) => `<li><b>${item.days}</b>: ${item.hours}</li>`)
+        .join('');
+      const services = profile.services
+        .map((service) => `<li><b>${service.name}</b> — ${service.price}, ${service.duration}<br><span class="small">${service.description}</span></li>`)
+        .join('');
+      const rules = profile.bookingRules
+        ? `<p><b>Pravidla rezervací:</b> slot ${profile.bookingRules.slotMinutes} min, minimální předstih ${profile.bookingRules.minNoticeMinutes} min, buffer ${profile.bookingRules.bufferMinutes} min</p>`
+        : '';
+      const html = `
+        <p><b>${profile.companyName}</b><br><span class="small">${profile.description}</span></p>
+        <p><b>Asistent:</b> ${profile.assistantName} | <b>Jazyk:</b> ${profile.language}</p>
+        <p><b>Adresa:</b> ${profile.address}</p>
+        ${rules}
+        <p><b>Otevírací doba:</b></p><ul>${opening}</ul>
+        <p><b>Služby:</b></p><ul>${services}</ul>
+      `;
+      businessProfileEl.innerHTML = html;
+      const mirror = document.getElementById('businessProfileMirror');
+      if (mirror) mirror.innerHTML = html;
+      bookingService.innerHTML = profile.services
+        .filter((service) => service.bookingEnabled)
+        .map((service) => `<option value="${service.name}">${service.name} — ${service.price}</option>`)
+        .join('');
+    }
+
+
+    function fillAdminEditor(profile) {
+      currentProfile = profile;
+      adminCompanyName.value = profile.companyName || '';
+      adminAssistantName.value = profile.assistantName || '';
+      adminDescription.value = profile.description || '';
+      adminAddress.value = profile.address || '';
+      adminWeekdayHours.value = profile.openingHours?.[0]?.hours || '09:00–18:00';
+      adminSaturdayHours.value = profile.openingHours?.[1]?.hours || '09:00–13:00';
+      adminSundayHours.value = profile.openingHours?.[2]?.hours || 'zavřeno';
+      adminSlotMinutes.value = profile.bookingRules?.slotMinutes ?? 15;
+      adminMinNotice.value = profile.bookingRules?.minNoticeMinutes ?? 60;
+      adminBuffer.value = profile.bookingRules?.bufferMinutes ?? 0;
+      adminServices.value = (profile.services || []).map((service) => [
+        service.name,
+        service.description,
+        service.price,
+        service.spokenPrice || service.price,
+        service.duration,
+        service.durationMinutes || 30,
+        service.bookingEnabled !== false ? 'true' : 'false',
+      ].join(' | ')).join('\n');
+      adminFallback.value = profile.messages?.fallback || '';
+    }
+
+    function parseHourRange(value) {
+      const trimmed = String(value || '').trim();
+      if (!trimmed || trimmed.toLowerCase() === 'zavřeno') return [];
+      const match = trimmed.match(/(\d{2}:\d{2})\s*[–-]\s*(\d{2}:\d{2})/);
+      if (!match) throw new Error(`Neplatná otevírací doba: ${trimmed}. Použijte formát 09:00–18:00 nebo zavřeno.`);
+      return [{ start: match[1], end: match[2] }];
+    }
+
+    function buildProfileFromEditor() {
+      if (!currentProfile) throw new Error('Profil ještě není načtený.');
+      const services = adminServices.value.split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const parts = line.split('|').map((part) => part.trim());
+          if (parts.length < 6) throw new Error(`Neplatná služba: ${line}`);
+          return {
+            name: parts[0],
+            description: parts[1],
+            price: parts[2],
+            spokenPrice: parts[3],
+            duration: parts[4],
+            durationMinutes: Number(parts[5]),
+            bookingEnabled: parts[6] ? parts[6].toLowerCase() !== 'false' : true,
+          };
+        });
+
+      return {
+        ...currentProfile,
+        companyName: adminCompanyName.value.trim(),
+        assistantName: adminAssistantName.value.trim(),
+        description: adminDescription.value.trim(),
+        address: adminAddress.value.trim(),
+        openingHours: [
+          { days: 'pondělí až pátek', hours: adminWeekdayHours.value.trim(), spoken: adminWeekdayHours.value.trim() === 'zavřeno' ? 'zavřeno' : `od ${adminWeekdayHours.value.trim()}` },
+          { days: 'sobota', hours: adminSaturdayHours.value.trim(), spoken: adminSaturdayHours.value.trim() === 'zavřeno' ? 'zavřeno' : `od ${adminSaturdayHours.value.trim()}` },
+          { days: 'neděle', hours: adminSundayHours.value.trim(), spoken: adminSundayHours.value.trim() === 'zavřeno' ? 'zavřeno' : `od ${adminSundayHours.value.trim()}` },
+        ],
+        bookingRules: {
+          ...currentProfile.bookingRules,
+          slotMinutes: Number(adminSlotMinutes.value),
+          minNoticeMinutes: Number(adminMinNotice.value),
+          bufferMinutes: Number(adminBuffer.value),
+          workingHours: {
+            monday: parseHourRange(adminWeekdayHours.value),
+            tuesday: parseHourRange(adminWeekdayHours.value),
+            wednesday: parseHourRange(adminWeekdayHours.value),
+            thursday: parseHourRange(adminWeekdayHours.value),
+            friday: parseHourRange(adminWeekdayHours.value),
+            saturday: parseHourRange(adminSaturdayHours.value),
+            sunday: parseHourRange(adminSundayHours.value),
+          },
+        },
+        services,
+        messages: {
+          ...currentProfile.messages,
+          fallback: adminFallback.value.trim(),
+        },
+      };
+    }
+
+    async function saveAdminProfile() {
+      profileSaveResult.textContent = 'Ukládám profil...';
+      profileSaveResult.className = 'small';
+      try {
+        const profile = buildProfileFromEditor();
+        const res = await adminFetch('/api/business-profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(profile),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.message || data.error || 'uložení selhalo');
+        renderBusinessProfile(data.profile);
+        fillAdminEditor(data.profile);
+        await refreshAiStatus();
+        profileSaveResult.textContent = 'Profil je uložený. Agent nyní používá nová data.';
+        profileSaveResult.className = 'small ok';
+        log('Business profile saved:', { companyName: data.profile.companyName, services: data.profile.services.length });
+      } catch (error) {
+        profileSaveResult.textContent = `Chyba ukládání: ${error.message}`;
+        profileSaveResult.className = 'small warn';
+      }
+    }
+
+    async function refreshSystemStatus() {
+      try {
+        const res = await fetch('/api/system/status');
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || 'systém není dostupný');
+        systemStatusEl.textContent = `${data.activeBookingsCount} aktivních rezervací`;
+        systemStatusEl.className = 'ok';
+        systemOutput.textContent = JSON.stringify({
+          version: data.version,
+          mode: data.mode,
+          storage: data.storage,
+          telephony: data.telephony,
+          paidApis: data.paidApis,
+          companyName: data.companyName,
+          servicesCount: data.servicesCount,
+          bookingsCount: data.bookingsCount,
+          logsCount: data.logsCount,
+          checks: data.checks,
+        }, null, 2);
+      } catch (error) {
+        systemStatusEl.textContent = 'chyba stavu';
+        systemStatusEl.className = 'warn';
+        systemOutput.textContent = `Chyba systémového stavu: ${error.message}`;
+      }
+    }
+
+    function exportBookingsCsv() {
+      if (!adminPasswordValue) {
+        bookingsOutput.textContent = 'Před CSV exportem zadejte administrátorské heslo.';
+        return;
+      }
+      fetch('/api/bookings/export.csv', { headers: adminHeaders() })
+        .then(async (res) => {
+          if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'CSV export selhal');
+          return res.blob();
+        })
+        .then((blob) => {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'prague-ai-voice-bookings.csv';
+          link.click();
+          URL.revokeObjectURL(url);
+        })
+        .catch((error) => { bookingsOutput.textContent = `Chyba CSV exportu: ${error.message}`; });
+    }
+
+    async function refreshBusinessProfile() {
+      try {
+        const res = await fetch('/api/business-profile');
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || 'profil není dostupný');
+        renderBusinessProfile(data.profile);
+        fillAdminEditor(data.profile);
+      } catch (error) {
+        businessProfileEl.textContent = `Chyba profilu: ${error.message}`;
+      }
+    }
+
+    async function refreshBookings() {
+      try {
+        const res = await adminFetch('/api/bookings');
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || 'rezervace nejsou dostupné');
+        bookingsOutput.textContent = JSON.stringify(data.bookings, null, 2);
+        await refreshSystemStatus();
+      } catch (error) {
+        bookingsOutput.textContent = `Chyba rezervací: ${error.message}`;
+      }
+    }
+
+
+    function bookingPayload() {
+      return {
+        serviceName: bookingService.value,
+        date: bookingDate.value,
+        time: bookingTime.value,
+        customerName: bookingName.value,
+        customerPhone: bookingPhone.value,
+        customerEmail: bookingEmail.value,
+        note: bookingNote.value,
+      };
+    }
+
+    async function checkAvailability() {
+      bookingResult.textContent = 'Ověřuji dostupnost...';
+      try {
+        const params = new URLSearchParams({
+          serviceName: bookingService.value,
+          date: bookingDate.value,
+          time: bookingTime.value,
+        });
+        const res = await fetch(`/api/bookings/availability?${params.toString()}`);
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.message || data.error || 'ověření dostupnosti selhalo');
+        if (data.availability.ok) {
+          bookingResult.textContent = `Termín je volný: ${data.availability.date} ${data.availability.time}, délka ${data.availability.durationMinutes} min.`;
+          bookingResult.className = 'small ok';
+        } else {
+          bookingResult.textContent = `Termín není dostupný: ${data.availability.reason}`;
+          bookingResult.className = 'small warn';
+        }
+      } catch (error) {
+        bookingResult.textContent = `Chyba dostupnosti: ${error.message}`;
+        bookingResult.className = 'small warn';
+      }
+    }
+
+    async function loadAvailableSlots() {
+      slotsOutput.textContent = 'Načítám volné termíny...';
+      try {
+        const params = new URLSearchParams({
+          serviceName: bookingService.value,
+          date: bookingDate.value,
+        });
+        const res = await fetch(`/api/bookings/slots?${params.toString()}`);
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.message || data.error || 'načtení termínů selhalo');
+        slotsOutput.textContent = JSON.stringify({ date: data.date, serviceName: data.serviceName, slots: data.slots }, null, 2);
+      } catch (error) {
+        slotsOutput.textContent = `Chyba termínů: ${error.message}`;
+      }
+    }
+
+    async function createBookingRequest() {
+      bookingResult.textContent = 'Ukládám rezervaci...';
+      try {
+        const res = await fetch('/api/bookings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bookingPayload()),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.message || data.error || 'uložení rezervace selhalo');
+        bookingResult.textContent = `Rezervace uložena: ${data.booking.serviceName}, ${data.booking.date} ${data.booking.time}–${String(Math.floor(data.booking.endMinutes / 60)).padStart(2, '0')}:${String(data.booking.endMinutes % 60).padStart(2, '0')}`;
+        bookingResult.className = 'small ok';
+        await refreshBookings();
+        await refreshSystemStatus();
+      } catch (error) {
+        bookingResult.textContent = `Chyba: ${error.message}`;
+        bookingResult.className = 'small warn';
+      }
+    }
+
+    function addChatMessage(role, text) {
+      const item = document.createElement('div');
+      item.className = `chat-message ${role}`;
+      item.textContent = text;
+      conversationChat.appendChild(item);
+      conversationChat.scrollTop = conversationChat.scrollHeight;
+    }
+
+    function updateConversationStateUi(state) {
+      bookingConversationState = state || { stage: 'idle', fields: {} };
+      conversationStage.textContent = bookingConversationState.stage || 'idle';
+      conversationStateOutput.textContent = JSON.stringify(bookingConversationState, null, 2);
+    }
+
+    async function sendConversationMessage(text, shouldSpeak = true) {
+      const message = (text || conversationInput.value || '').trim();
+      if (!message) return;
+      addChatMessage('user', message);
+      conversationInput.value = '';
+      sendConversationBtn.disabled = true;
+      try {
+        const res = await fetch('/api/assistant/booking-conversation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: message, state: bookingConversationState }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.message || data.error || 'konverzace selhala');
+        updateConversationStateUi(data.state);
+        lastConversationText = data.text;
+        speakConversationBtn.disabled = false;
+        addChatMessage('assistant', data.text);
+        log('Booking conversation:', { intent: data.intent, stage: data.state.stage, actions: data.actions });
+        if (data.booking) await refreshBookings();
+        if (shouldSpeak) speak(data.text);
+      } catch (error) {
+        const errorText = `Chyba konverzace: ${error.message}`;
+        addChatMessage('assistant', errorText);
+        log('Booking conversation error:', { message: error.message });
+      } finally {
+        sendConversationBtn.disabled = false;
+      }
+    }
+
+    async function refreshAiStatus() {
+      try {
+        const res = await fetch('/api/assistant/status');
+        const data = await res.json();
+        aiStatusEl.textContent = data.ok ? `lokální režim (${data.model}) za ${data.profile.companyName}` : 'lokální agent není připravený';
+        aiStatusEl.className = data.ok ? 'ok' : 'warn';
+      } catch (error) {
+        aiStatusEl.textContent = 'chyba stavu';
+        aiStatusEl.className = 'warn';
+      }
+    }
+
+    async function refreshTtsStatus() {
+      try {
+        const res = await fetch('/api/tts/status');
+        const data = await res.json();
+        if (data.edgeTts && data.edgeTts.ok) {
+          voiceStatusEl.textContent = `český neuralní TTS je připravený (${data.edgeTts.command || 'edge-tts'})`;
+          voiceStatusEl.className = 'ok';
+        } else if (data.espeakNg && data.espeakNg.ok) {
+          voiceStatusEl.textContent = 'edge-tts není nalezen; používá se záložní espeak-ng (robotický hlas)';
+          voiceStatusEl.className = 'warn';
+        } else {
+          voiceStatusEl.textContent = 'nenalezen žádný TTS engine — nainstalujte edge-tts';
+          voiceStatusEl.className = 'warn';
+        }
+      } catch (error) {
+        voiceStatusEl.textContent = 'nelze ověřit offline TTS';
+        voiceStatusEl.className = 'warn';
+      }
+    }
+
+    function speakBrowserFallback(text) {
+      if (!('speechSynthesis' in window)) {
+        log('Prohlížeč nepodporuje speechSynthesis');
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'cs-CZ';
+      utterance.rate = 0.82;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      utterance.onerror = (event) => log('Browser speech error:', { error: event.error });
+      window.speechSynthesis.speak(utterance);
+    }
+
+    async function speak(text) {
+      try {
+        const res = await fetch('/api/tts/czech', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, voice: voiceSelect.value, engine: 'neural' }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.message || data.error || 'offline TTS failed');
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.onended = () => URL.revokeObjectURL(url);
+        audio.onerror = () => {
+          URL.revokeObjectURL(url);
+          log('Audio playback error, using browser fallback');
+          speakBrowserFallback(text);
+        };
+        await audio.play();
+      } catch (error) {
+        log('Server TTS unavailable, using browser fallback:', { message: error.message });
+        speakBrowserFallback(text);
+      }
+    }
+
+    connectBtn.onclick = () => {
+      ws = new WebSocket(wsUrl());
+      ws.onopen = () => {
+        statusEl.textContent = 'připojeno';
+        statusEl.className = 'ok';
+        recordBtn.disabled = false;
+        stopBtn.disabled = false;
+        sendTextBtn.disabled = false;
+        ws.send(JSON.stringify({ type: 'hello', userAgent: navigator.userAgent }));
+        log('WebSocket connected');
+      };
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        log('server:', data);
+      };
+      ws.onclose = () => {
+        statusEl.textContent = 'zavřeno';
+        recordBtn.disabled = true;
+        stopBtn.disabled = true;
+        sendTextBtn.disabled = true;
+        log('WebSocket closed');
+      };
+      ws.onerror = () => log('WebSocket error');
+    };
+
+    sendTextBtn.onclick = () => {
+      ws.send(JSON.stringify({ type: 'text', text: textInput.value }));
+    };
+
+    sendAiBtn.onclick = async () => {
+      sendAiBtn.disabled = true;
+      assistantOutputEl.textContent = 'Čekám na odpověď lokálního agenta...';
+      try {
+        const res = await fetch('/api/assistant/text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: textInput.value }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'AI request failed');
+        lastAssistantText = data.text;
+        assistantOutputEl.textContent = data.text;
+        speakLastBtn.disabled = false;
+        log('Agent:', { model: data.model, intent: data.intent, text: data.text });
+        speak(data.text);
+      } catch (error) {
+        assistantOutputEl.textContent = `Chyba: ${error.message}`;
+        log('Agent error:', { message: error.message });
+      } finally {
+        sendAiBtn.disabled = false;
+      }
+    };
+
+    speakLastBtn.onclick = () => {
+      if (lastAssistantText) speak(lastAssistantText);
+    };
+
+    testVoiceBtn.onclick = () => {
+      speak('Dobrý den, dovolali jste se do Studia Aurora Praha. Toto je test přirozeného českého hlasu. Jak vám mohu pomoci?');
+    };
+
+    startConversationBtn.onclick = () => {
+      conversationChat.innerHTML = '';
+      updateConversationStateUi({ stage: 'idle', fields: {} });
+      sendConversationMessage('Chci rezervaci');
+    };
+
+    oneSentenceExampleBtn.onclick = () => {
+      conversationChat.innerHTML = '';
+      updateConversationStateUi({ stage: 'idle', fields: {} });
+      conversationInput.value = 'Chci základní kosmetické ošetření dne 2099-08-15 v 10 hodin, jmenuji se Jan Novak, telefon +420111222333';
+      sendConversationMessage();
+    };
+
+    sendConversationBtn.onclick = () => sendConversationMessage();
+    conversationInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') sendConversationMessage();
+    });
+    resetConversationBtn.onclick = () => {
+      conversationChat.innerHTML = '';
+      lastConversationText = '';
+      speakConversationBtn.disabled = true;
+      updateConversationStateUi({ stage: 'idle', fields: {} });
+    };
+    speakConversationBtn.onclick = () => {
+      if (lastConversationText) speak(lastConversationText);
+    };
+
+    adminLoginBtn.onclick = async () => {
+      try {
+        await adminLogin(adminPassword.value);
+        await refreshBookings();
+        log('Admin login successful');
+      } catch (error) {
+        setAdminUi(false);
+        adminAuthStatus.textContent = `Chyba přihlášení administrátora: ${error.message}`;
+        adminAuthStatus.className = 'small warn';
+      }
+    };
+    bookingsLoginBtn.onclick = async () => {
+      try {
+        await adminLogin(bookingsAdminPassword.value);
+        await refreshBookings();
+      } catch (error) {
+        setAdminUi(false);
+        bookingsAuthStatus.textContent = `Chyba přihlášení administrátora: ${error.message}`;
+        bookingsAuthStatus.className = 'small warn';
+      }
+    };
+
+    saveProfileBtn.onclick = saveAdminProfile;
+    resetEditorBtn.onclick = () => { if (currentProfile) fillAdminEditor(currentProfile); };
+
+    reloadProfileBtn.onclick = async () => {
+      try {
+        const res = await adminFetch('/api/business-profile/reload', { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || 'reload failed');
+        renderBusinessProfile(data.profile);
+        fillAdminEditor(data.profile);
+        log('Business profile reloaded:', { companyName: data.profile.companyName, services: data.profile.services.length });
+      } catch (error) {
+        log('Business profile reload error:', { message: error.message });
+      }
+    };
+
+    browserVoiceBtn.onclick = () => {
+      speakBrowserFallback('Dobrý den, dovolali jste se do Studia Aurora Praha. Jak vám mohu pomoci?');
+    };
+
+    checkAvailabilityBtn.onclick = checkAvailability;
+    loadSlotsBtn.onclick = loadAvailableSlots;
+    createBookingBtn.onclick = createBookingRequest;
+    refreshBookingsBtn.onclick = refreshBookings;
+    exportBookingsBtn.onclick = exportBookingsCsv;
+
+    recordBtn.onclick = async () => {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      recorder.ondataavailable = async (event) => {
+        if (!event.data.size || !ws || ws.readyState !== WebSocket.OPEN) return;
+        const arrayBuffer = await event.data.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        let binary = '';
+        for (const byte of bytes) binary += String.fromCharCode(byte);
+        ws.send(JSON.stringify({
+          type: 'audio',
+          mimeType: event.data.type || 'audio/webm',
+          payload: btoa(binary),
+        }));
+      };
+      recorder.start(1000);
+      recordBtn.disabled = true;
+      log('Microphone recording started');
+    };
+
+    stopBtn.onclick = () => {
+      if (recorder && recorder.state !== 'inactive') {
+        recorder.stop();
+        recorder.stream.getTracks().forEach((track) => track.stop());
+      }
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'stop' }));
+      }
+      log('Stop sent');
+    };
+
+    document.querySelectorAll('.nav button').forEach((button) => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.nav button').forEach((item) => item.classList.remove('active'));
+        document.querySelectorAll('.view').forEach((view) => view.classList.remove('active'));
+        button.classList.add('active');
+        document.getElementById(button.dataset.target).classList.add('active');
+      });
+    });
+
+    updateConversationStateUi(bookingConversationState);
+    refreshBusinessProfile();
+    setAdminUi(Boolean(adminPasswordValue));
+    if (adminPasswordValue) refreshBookings(); else bookingsOutput.textContent = 'Zamčeno. Zadejte administrátorské heslo pro přehled rezervací.';
+    refreshAiStatus();
+    refreshTtsStatus();
+    refreshSystemStatus();
+  </script>
+</body>
+</html>

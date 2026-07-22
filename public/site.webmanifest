@@ -1,0 +1,26 @@
+{
+  "name": "Prague AI Voice",
+  "short_name": "AI Voice",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fbff",
+  "theme_color": "#10c4d4",
+  "icons": [
+    {
+      "src": "/assets/prague-ai-voice-icon.svg?v=190",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/prague-ai-voice-icon-192.png?v=190",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/prague-ai-voice-icon-512.png?v=190",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

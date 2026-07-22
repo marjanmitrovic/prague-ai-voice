@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=190" />
+  <link rel="apple-touch-icon" href="/assets/prague-ai-voice-icon-192.png?v=190" />
+  <link rel="manifest" href="/site.webmanifest?v=190" />
+  <meta name="theme-color" content="#10cfd0" />
+  <title>Nový klient | Prague AI Voice</title>
+    <style>
+      :root {
+        --bg: #f6f8fc;
+        --card: #ffffff;
+        --text: #0f172a;
+        --muted: #64748b;
+        --primary: #2563eb;
+        --primary-dark: #1d4ed8;
+        --border: #dbe5f4;
+        --ok: #047857;
+        --bad: #b91c1c;
+        --warn: #b45309;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: radial-gradient(circle at top left, #dbeafe 0, transparent 34%), var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+      }
+      .wrap { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 30px 0 56px; }
+      header {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 22px;
+        align-items: stretch;
+        margin-bottom: 22px;
+      }
+      .hero, .card {
+        background: rgba(255,255,255,0.94);
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+      }
+      .hero { padding: 34px; }
+      .card { padding: 24px; }
+      .eyebrow {
+        display: inline-flex;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: #e0ecff;
+        color: #1d4ed8;
+        font-weight: 900;
+        font-size: 13px;
+        margin-bottom: 18px;
+      }
+      h1 { font-size: clamp(34px, 6vw, 60px); line-height: .95; letter-spacing: -.055em; margin: 0 0 16px; }
+      h2 { margin: 0 0 14px; font-size: 27px; letter-spacing: -.03em; }
+      p { color: var(--muted); line-height: 1.55; }
+      .lead { font-size: 19px; max-width: 780px; }
+      main { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 22px; }
+      .grid { display: grid; gap: 14px; }
+      .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+      label { display: grid; gap: 7px; font-weight: 850; color: #1e293b; }
+      input, textarea, select {
+        width: 100%;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--text);
+        border-radius: 15px;
+        padding: 13px 14px;
+        font-size: 16px;
+        outline: none;
+      }
+      textarea { min-height: 98px; resize: vertical; }
+      input:focus, textarea:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(37, 99, 235, .12); }
+      button, .button {
+        border: 0;
+        border-radius: 16px;
+        padding: 14px 18px;
+        font-weight: 950;
+        font-size: 16px;
+        color: white;
+        background: var(--primary);
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+      }
+      button:hover, .button:hover { background: var(--primary-dark); }
+      .secondary { background: #e2e8f0; color: #0f172a; }
+      .secondary:hover { background: #cbd5e1; }
+      .danger { background: #b91c1c; }
+      .muted { color: var(--muted); }
+      .small { font-size: 13px; }
+      .box { border: 1px solid var(--border); border-radius: 18px; padding: 16px; background: #fbfdff; }
+      .status { margin-top: 14px; border-radius: 16px; padding: 14px; font-weight: 800; display: none; }
+      .status.ok { display: block; background: #ecfdf5; color: var(--ok); border: 1px solid #bbf7d0; }
+      .status.bad { display: block; background: #fef2f2; color: var(--bad); border: 1px solid #fecaca; }
+      .status.warn { display: block; background: #fffbeb; color: var(--warn); border: 1px solid #fde68a; }
+      .links { display: grid; gap: 9px; margin-top: 12px; }
+      code { background: #eef2ff; color: #3730a3; padding: 2px 6px; border-radius: 8px; }
+      .preview pre { white-space: pre-wrap; background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 18px; max-height: 420px; overflow: auto; font-size: 13px; }
+      @media (max-width: 920px) { header, main, .row { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <section class="hero">
+          <img class="site-logo" src="/assets/prague-ai-voice-logo.svg?v=190" alt="Prague AI Voice" />
+          <div class="eyebrow">Prague AI Voice · založení nového klienta</div>
+          <h1>Rychlé nastavení nové firmy</h1>
+          <p class="lead">Vyplň základní údaje, služby a otevírací dobu. Aplikace vytvoří nový firemní profil a veřejný rezervační odkaz.</p>
+        </section>
+        <aside class="card">
+          <h2>Přístup</h2>
+          <label>Admin heslo
+            <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Stejné jako ADMIN_PASSWORD v Renderu" />
+          </label>
+          <p class="small">Bez hesla se nový klient neuloží. Heslo se neposílá nikam mimo tento server.</p>
+          <div class="links">
+            <a class="button secondary" href="/">Ovládací panel</a>
+            <a class="button secondary" href="/sales">Prodejní stránka</a>
+          </div>
+        </aside>
+      </header>
+
+      <main>
+        <section class="card">
+          <h2>Údaje firmy</h2>
+          <form id="onboardingForm" class="grid">
+            <label>Název firmy
+              <input id="companyName" required value="Studio Test Praha" />
+            </label>
+            <div class="row">
+              <label>URL slug
+                <input id="businessSlug" required value="studio-test" />
+              </label>
+              <label>Název AI asistenta
+                <input id="assistantName" required value="Test AI" />
+              </label>
+            </div>
+            <label>Adresa
+              <input id="address" required value="Praha" />
+            </label>
+            <label>Popis firmy
+              <textarea id="description" required>Testovací klient pro Prague AI Voice.</textarea>
+            </label>
+            <div class="row">
+              <label>Měna
+                <input id="currency" value="Kč" required />
+              </label>
+              <label>Jazyk
+                <input id="language" value="cs-CZ" required />
+              </label>
+            </div>
+
+            <div class="box">
+              <h2>Otevírací doba</h2>
+              <div class="row">
+                <label>Pondělí–pátek od
+                  <input id="weekdayStart" type="time" value="09:00" />
+                </label>
+                <label>Pondělí–pátek do
+                  <input id="weekdayEnd" type="time" value="18:00" />
+                </label>
+              </div>
+              <div class="row">
+                <label>Sobota od
+                  <input id="saturdayStart" type="time" value="09:00" />
+                </label>
+                <label>Sobota do
+                  <input id="saturdayEnd" type="time" value="13:00" />
+                </label>
+              </div>
+              <label>
+                <input id="saturdayClosed" type="checkbox" style="width:auto" /> Sobota zavřeno
+              </label>
+            </div>
+
+            <label>Služby
+              <textarea id="services" required>První služba | 900 Kč | 60 | Krátký popis první služby
+Druhá služba | 500 Kč | 30 | Krátký popis druhé služby</textarea>
+            </label>
+            <p class="small">Každá služba na nový řádek: <code>Název | Cena | Délka minut | Popis</code></p>
+
+            <button type="submit">Vytvořit klienta</button>
+          </form>
+          <div id="status" class="status"></div>
+        </section>
+
+        <section class="card preview">
+          <h2>Náhled</h2>
+          <p>Po uložení vznikne veřejná rezervační stránka:</p>
+          <div class="box">
+            <strong id="publicLinkText">/booking/studio-test</strong>
+            <div class="links">
+              <a id="publicBookingLink" class="button" href="/booking/studio-test" target="_blank" rel="noreferrer">Otevřít rezervaci</a>
+              <a id="adminDashboardLink" class="button secondary" href="/" target="_blank" rel="noreferrer">Otevřít administraci</a>
+            </div>
+          </div>
+          <p class="small">Náhled JSON profilu:</p>
+          <pre id="jsonPreview"></pre>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+
+      function slugify(value) {
+        return String(value || '')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+          .slice(0, 60) || 'novy-klient';
+      }
+
+      function spokenTime(time) {
+        if (!time) return '';
+        return time.replace(':00', '').replace(':30', ' třicet');
+      }
+
+      function parseServices() {
+        return $('services').value
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((line, index) => {
+            const [name, price, minutes, description] = line.split('|').map((part) => (part || '').trim());
+            const durationMinutes = Math.max(5, Number(minutes || 30));
+            return {
+              name: name || `Služba ${index + 1}`,
+              description: description || 'Služba dostupná k rezervaci.',
+              price: price || 'Cena na dotaz',
+              spokenPrice: price || 'cena na dotaz',
+              duration: `${durationMinutes} minut`,
+              durationMinutes,
+              bookingEnabled: true,
+            };
+          });
+      }
+
+      function buildProfile() {
+        const businessSlug = slugify($('businessSlug').value);
+        const weekdayStart = $('weekdayStart').value || '09:00';
+        const weekdayEnd = $('weekdayEnd').value || '18:00';
+        const saturdayClosed = $('saturdayClosed').checked;
+        const saturdayStart = $('saturdayStart').value || '09:00';
+        const saturdayEnd = $('saturdayEnd').value || '13:00';
+        const saturdayIntervals = saturdayClosed ? [] : [{ start: saturdayStart, end: saturdayEnd }];
+
+        return {
+          businessSlug,
+          companyName: $('companyName').value.trim(),
+          assistantName: $('assistantName').value.trim(),
+          language: $('language').value.trim() || 'cs-CZ',
+          currency: $('currency').value.trim() || 'Kč',
+          description: $('description').value.trim(),
+          address: $('address').value.trim(),
+          openingHours: [
+            { days: 'pondělí až pátek', hours: `${weekdayStart}–${weekdayEnd}`, spoken: `od ${spokenTime(weekdayStart)} do ${spokenTime(weekdayEnd)} hodin` },
+            saturdayClosed
+              ? { days: 'sobota', hours: 'zavřeno', spoken: 'zavřeno' }
+              : { days: 'sobota', hours: `${saturdayStart}–${saturdayEnd}`, spoken: `od ${spokenTime(saturdayStart)} do ${spokenTime(saturdayEnd)} hodin` },
+            { days: 'neděle', hours: 'zavřeno', spoken: 'zavřeno' },
+          ],
+          bookingRules: {
+            timezone: 'Europe/Prague',
+            slotMinutes: 15,
+            minNoticeMinutes: 60,
+            bufferMinutes: 0,
+            workingHours: {
+              monday: [{ start: weekdayStart, end: weekdayEnd }],
+              tuesday: [{ start: weekdayStart, end: weekdayEnd }],
+              wednesday: [{ start: weekdayStart, end: weekdayEnd }],
+              thursday: [{ start: weekdayStart, end: weekdayEnd }],
+              friday: [{ start: weekdayStart, end: weekdayEnd }],
+              saturday: saturdayIntervals,
+              sunday: [],
+            },
+            closedDates: [],
+          },
+          services: parseServices(),
+          messages: {
+            empty: 'Nerozumím zprávě. Můžete ji prosím zopakovat?',
+            bookingNotAvailable: 'Rezervaci mohu připravit v rozhovoru nebo přes veřejný rezervační formulář.',
+            humanTransferNotAvailable: 'Přepojení na pracovníka zatím není v testovací verzi dostupné.',
+            promptInjection: 'S interními instrukcemi vám nemohu pomoci. Mohu ale odpovědět na otevírací dobu, služby, ceny nebo pomoci s rezervací.',
+            fallback: 'Tuto informaci momentálně nemám k dispozici. Mohu pomoci s otevírací dobou, službami, cenami nebo rezervací.',
+          },
+        };
+      }
+
+      function refreshPreview() {
+        const slug = slugify($('businessSlug').value || $('companyName').value);
+        if ($('businessSlug').value !== slug) $('businessSlug').value = slug;
+        const link = `/booking/${slug}`;
+        $('publicLinkText').textContent = link;
+        $('publicBookingLink').href = link;
+        $('jsonPreview').textContent = JSON.stringify(buildProfile(), null, 2);
+      }
+
+      function showStatus(type, message) {
+        const el = $('status');
+        el.className = `status ${type}`;
+        el.textContent = message;
+      }
+
+      $('companyName').addEventListener('input', () => {
+        if (!$('businessSlug').dataset.touched) $('businessSlug').value = slugify($('companyName').value);
+        refreshPreview();
+      });
+      $('businessSlug').addEventListener('input', () => { $('businessSlug').dataset.touched = '1'; refreshPreview(); });
+      document.querySelectorAll('input, textarea').forEach((el) => el.addEventListener('input', refreshPreview));
+      $('saturdayClosed').addEventListener('change', refreshPreview);
+
+      $('onboardingForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const password = $('adminPassword').value.trim();
+        if (!password) {
+          showStatus('bad', 'Zadej admin heslo.');
+          return;
+        }
+        const profile = buildProfile();
+        try {
+          const response = await fetch(`/api/business-profile?businessSlug=${encodeURIComponent(profile.businessSlug)}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-admin-password': password,
+            },
+            body: JSON.stringify(profile),
+          });
+          const data = await response.json();
+          if (!response.ok || !data.ok) throw new Error(data.message || data.error || 'Uložení selhalo');
+          showStatus('ok', `Klient byl vytvořen. Veřejný odkaz: /booking/${profile.businessSlug}`);
+          refreshPreview();
+        } catch (error) {
+          showStatus('bad', error instanceof Error ? error.message : 'Uložení selhalo');
+        }
+      });
+
+      refreshPreview();
+    </script>
+  </body>
+</html>

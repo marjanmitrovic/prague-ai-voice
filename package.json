@@ -1,6 +1,6 @@
 {
   "name": "prague-ai-voice",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "private": true,
   "type": "module",
   "description": "Prague AI Voice - finálně vyleštěné české demo s landing page, správou klientů, rezervacemi a Neon PostgreSQL úložištěm",

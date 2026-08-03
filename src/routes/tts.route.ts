@@ -85,7 +85,7 @@ async function synthesizeWithEdgeTts(text: string, filePath: string, voice: stri
     [
       ...candidate.baseArgs,
       '--voice', voice,
-      '--rate', '-4%',
+      '--rate=-4%',
       '--text', text,
       '--write-media', filePath,
     ],
@@ -116,6 +116,7 @@ export async function ttsRoute(app: FastifyInstance): Promise<void> {
         quality: 'natural-neural',
       },
       browserFallbackDisabled: true,
+      rateArgument: '--rate=-4%',
       note: 'Používá se pouze český Microsoft edge-tts neuralní MP3 hlas, ne browser speechSynthesis.',
     };
   });
@@ -132,7 +133,7 @@ export async function ttsRoute(app: FastifyInstance): Promise<void> {
         'cs-CZ-VlastaNeural',
       );
       await rm(mp3Path, { force: true });
-      return { ok: true, engine: 'edge-tts', voice: 'cs-CZ-VlastaNeural', command: result.commandLabel };
+      return { ok: true, engine: 'edge-tts', voice: 'cs-CZ-VlastaNeural', command: result.commandLabel, rateArgument: '--rate=-4%' };
     } catch (error) {
       await rm(mp3Path, { force: true });
       request.log.warn({ error }, 'Czech neural TTS self-test failed');
@@ -164,6 +165,7 @@ export async function ttsRoute(app: FastifyInstance): Promise<void> {
       reply.header('X-TTS-Engine', 'edge-tts');
       reply.header('X-TTS-Command', result.commandLabel);
       reply.header('X-TTS-Voice', voice);
+      reply.header('X-TTS-Rate', '-4%');
       return reply.send(createReadStream(mp3Path).on('close', () => {
         void rm(mp3Path, { force: true });
       }));

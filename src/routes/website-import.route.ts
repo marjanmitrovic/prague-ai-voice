@@ -9,6 +9,12 @@ const importRequestSchema = z.object({
 const MAX_HTML_CHARS = 550_000;
 const MAX_TEXT_CHARS = 45_000;
 
+type SuggestedService = {
+  name: string;
+  evidence: string;
+  price?: string;
+};
+
 function isBlockedHost(hostname: string): boolean {
   const host = hostname.toLowerCase();
   if (host === 'localhost' || host.endsWith('.localhost')) return true;
@@ -95,10 +101,10 @@ function extractAddressCandidates(text: string): string[] {
   return unique(lines.filter((line) => pattern.test(line) && line.length <= 180).slice(0, 12));
 }
 
-function extractServiceCandidates(text: string, prices: string[]): Array<{ name: string; evidence: string; price?: string }> {
+function extractServiceCandidates(text: string, prices: string[]): SuggestedService[] {
   const lines = text.split('\n').map((line) => cleanText(line)).filter((line) => line.length >= 4 && line.length <= 170);
   const serviceKeywords = /(masáž|kosmet|ošetření|barvení|střih|účes|obočí|neht|manik|pedik|čištění|konzultace|servis|diagnostika|terapie|kurz|lekce|balíček)/i;
-  const candidates: Array<{ name: string; evidence: string; price?: string }> = [];
+  const candidates: SuggestedService[] = [];
 
   for (const line of lines) {
     const hasServiceWord = serviceKeywords.test(line);
@@ -106,7 +112,9 @@ function extractServiceCandidates(text: string, prices: string[]): Array<{ name:
     if (!hasServiceWord && !price) continue;
     const name = line.replace(/\s{2,}/g, ' ').slice(0, 90);
     if (!candidates.some((item) => item.name.toLowerCase() === name.toLowerCase())) {
-      candidates.push({ name, evidence: line, price });
+      const candidate: SuggestedService = { name, evidence: line };
+      if (price) candidate.price = price;
+      candidates.push(candidate);
     }
     if (candidates.length >= 18) break;
   }

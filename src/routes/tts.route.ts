@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { mkdir, rm, stat } from 'node:fs/promises';
+import { mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -17,12 +17,6 @@ type CommandCandidate = {
   baseArgs: string[];
 };
 
-type CommandCheck = {
-  label: string;
-  ok: boolean;
-  error?: string;
-};
-
 function getEdgeTtsCandidates(): CommandCandidate[] {
   const candidates: CommandCandidate[] = [];
   if (env.EDGE_TTS_PYTHON) {
@@ -36,8 +30,8 @@ function getEdgeTtsCandidates(): CommandCandidate[] {
   candidates.push(
     { label: 'python3 -m edge_tts', command: 'python3', baseArgs: ['-m', 'edge_tts'] },
     { label: 'python -m edge_tts', command: 'python', baseArgs: ['-m', 'edge_tts'] },
-    { label: 'py -m edge_tts', command: 'py', baseArgs: ['-m', 'edge_tts'] },
     { label: 'edge-tts', command: 'edge-tts', baseArgs: [] },
+    { label: 'py -m edge_tts', command: 'py', baseArgs: ['-m', 'edge_tts'] },
   );
 
   const seen = new Set<string>();
@@ -51,8 +45,8 @@ function getEdgeTtsCandidates(): CommandCandidate[] {
 
 const ttsSchema = z.object({
   text: z.string().trim().min(1).max(1000),
-  voice: z.enum(['cs-CZ-AntoninNeural', 'cs-CZ-VlastaNeural']).optional(),
-  engine: z.enum(['neural', 'auto', 'edge-tts', 'espeak-ng']).optional(),
+  voice: z.enum(['cs-CZ-VlastaNeural', 'cs-CZ-AntoninNeural']).optional(),
+  engine: z.enum(['neural', 'edge-tts']).optional(),
 });
 
 function sanitizeForSpeech(text: string): string {
@@ -63,141 +57,89 @@ function sanitizeForSpeech(text: string): string {
     .slice(0, 1000);
 }
 
-async function checkCommand(command: string, args: string[]): Promise<{ ok: true } | { ok: false; error: string }> {
-  try {
-    await execFileAsync(command, args, { timeout: 9000, windowsHide: true, maxBuffer: 1024 * 1024 * 2 });
-    return { ok: true };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { ok: false, error: message.slice(0, 500) };
-  }
-}
-
 async function hasCommand(command: string, args: string[]): Promise<boolean> {
-  return (await checkCommand(command, args)).ok;
+  try {
+    await execFileAsync(command, args, { timeout: 8000, windowsHide: true, maxBuffer: 1024 * 1024 * 2 });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-async function findEdgeTtsCandidate(): Promise<{ candidate: CommandCandidate | null; checks: CommandCheck[] }> {
-  const checks: CommandCheck[] = [];
-
+async function findEdgeTtsCandidate(): Promise<CommandCandidate | null> {
   for (const candidate of getEdgeTtsCandidates()) {
-    const check = await checkCommand(candidate.command, [...candidate.baseArgs, '--list-voices']);
-    const result: CommandCheck = { label: candidate.label, ok: check.ok };
-    if (!check.ok) result.error = check.error;
-    checks.push(result);
-    if (check.ok) return { candidate, checks };
+    const ok = await hasCommand(candidate.command, [...candidate.baseArgs, '--list-voices']);
+    if (ok) return candidate;
   }
-
-  return { candidate: null, checks };
+  return null;
 }
 
-async function assertGeneratedAudio(filePath: string, label: string): Promise<number> {
-  const file = await stat(filePath);
-  if (file.size < 1000) {
-    throw new Error(`${label} vytvořil příliš malý audio soubor (${file.size} B).`);
-  }
-  return file.size;
-}
-
-async function synthesizeWithEdgeTts(text: string, filePath: string, voice: string): Promise<{ commandLabel: string; bytes: number }> {
-  const edge = await findEdgeTtsCandidate();
-  if (!edge.candidate) {
-    const details = edge.checks.map((item) => `${item.label}: ${item.ok ? 'OK' : item.error}`).join(' | ');
-    throw new Error(`edge-tts není dostupný. Detaily: ${details}`);
+async function synthesizeWithEdgeTts(text: string, filePath: string, voice: string): Promise<{ commandLabel: string }> {
+  const candidate = await findEdgeTtsCandidate();
+  if (!candidate) {
+    throw new Error('edge-tts is not available. On Render set EDGE_TTS_PYTHON=/usr/bin/python3.');
   }
 
   await execFileAsync(
-    edge.candidate.command,
+    candidate.command,
     [
-      ...edge.candidate.baseArgs,
+      ...candidate.baseArgs,
       '--voice', voice,
       '--rate', '-4%',
-      '--pitch', '+0Hz',
       '--text', text,
       '--write-media', filePath,
     ],
     {
       timeout: 45000,
-      maxBuffer: 2 * 1024 * 1024,
+      maxBuffer: 4 * 1024 * 1024,
       windowsHide: true,
     },
   );
 
-  return { commandLabel: edge.candidate.label, bytes: await assertGeneratedAudio(filePath, 'edge-tts') };
-}
-
-async function synthesizeWithEspeak(text: string, filePath: string): Promise<number> {
-  await execFileAsync('espeak-ng', ['-v', 'cs', '-s', '142', '-p', '35', '-a', '170', '-w', filePath, text], {
-    timeout: 15000,
-    maxBuffer: 1024 * 1024,
-    windowsHide: true,
-  });
-  return assertGeneratedAudio(filePath, 'espeak-ng');
+  return { commandLabel: candidate.label };
 }
 
 export async function ttsRoute(app: FastifyInstance): Promise<void> {
   app.get('/api/tts/status', async () => {
-    const edge = await findEdgeTtsCandidate();
-    const edgeAvailable = Boolean(edge.candidate);
-    const espeakAvailable = await hasCommand('espeak-ng', ['--version']);
+    const edgeCandidate = await findEdgeTtsCandidate();
+    const edgeAvailable = Boolean(edgeCandidate);
 
     return {
-      ok: edgeAvailable || espeakAvailable,
-      preferredEngine: edgeAvailable ? 'edge-tts' : espeakAvailable ? 'espeak-ng' : null,
-      note: 'Tento status jen ověřuje dostupnost příkazu. Pro skutečný test hlasu otevřete /api/tts/self-test.',
-      renderHint: {
-        edgeTtsPython: env.EDGE_TTS_PYTHON || null,
-        expectedRenderValue: '/usr/bin/python3',
-        note: 'Na Renderu musí být v Docker runtime nainstalovaný python3 a edge-tts. Aplikace generuje audio do /tmp.',
-      },
+      ok: edgeAvailable,
+      preferredEngine: edgeAvailable ? 'edge-tts' : null,
       edgeTts: {
         ok: edgeAvailable,
-        command: edge.candidate?.label ?? null,
-        checks: edge.checks,
-        voices: ['cs-CZ-AntoninNeural', 'cs-CZ-VlastaNeural'],
+        command: edgeCandidate?.label ?? null,
+        voices: ['cs-CZ-VlastaNeural', 'cs-CZ-AntoninNeural'],
+        defaultVoice: 'cs-CZ-VlastaNeural',
         paidApiRequired: false,
         quality: 'natural-neural',
       },
-      espeakNg: {
-        ok: espeakAvailable,
-        voice: 'cs',
-        paidApiRequired: false,
-        quality: 'robotic-offline-fallback',
-      },
+      browserFallbackDisabled: true,
+      note: 'Používá se pouze český Microsoft edge-tts neuralní MP3 hlas, ne browser speechSynthesis.',
     };
   });
 
   app.get('/api/tts/self-test', async (request, reply) => {
     const folder = path.join(tmpdir(), 'prague-ai-voice-tts');
     await mkdir(folder, { recursive: true });
-    const mp3Path = path.join(folder, `${randomUUID()}-self-test.mp3`);
-    const testText = 'Dobrý den. Toto je skutečný test českého neuralního hlasu Vlasta pro Prague AI Voice.';
+    const mp3Path = path.join(folder, `${randomUUID()}.mp3`);
 
     try {
-      const result = await synthesizeWithEdgeTts(testText, mp3Path, 'cs-CZ-VlastaNeural');
+      const result = await synthesizeWithEdgeTts(
+        'Dobrý den, toto je test českého neuralního hlasu Vlasta.',
+        mp3Path,
+        'cs-CZ-VlastaNeural',
+      );
       await rm(mp3Path, { force: true });
-      return {
-        ok: true,
-        engine: 'edge-tts',
-        command: result.commandLabel,
-        voice: 'cs-CZ-VlastaNeural',
-        bytes: result.bytes,
-        accent: 'cs-CZ neural',
-        message: 'Skutečné generování MP3 proběhlo úspěšně.',
-      };
+      return { ok: true, engine: 'edge-tts', voice: 'cs-CZ-VlastaNeural', command: result.commandLabel };
     } catch (error) {
       await rm(mp3Path, { force: true });
-      const edge = await findEdgeTtsCandidate();
       request.log.warn({ error }, 'Czech neural TTS self-test failed');
       return reply.code(503).send({
         ok: false,
-        error: 'czech_neural_self_test_failed',
-        message: error instanceof Error ? error.message : 'Český neuralní hlas nelze vygenerovat.',
-        edgeTts: {
-          command: edge.candidate?.label ?? null,
-          checks: edge.checks,
-        },
-        fix: 'Na Renderu zkontrolujte Environment EDGE_TTS_PYTHON=/usr/bin/python3 a proveďte Clear build cache & deploy.',
+        error: 'neural_tts_unavailable',
+        message: error instanceof Error ? error.message : 'edge-tts failed',
       });
     }
   });
@@ -209,58 +151,29 @@ export async function ttsRoute(app: FastifyInstance): Promise<void> {
     }
 
     const text = sanitizeForSpeech(parsed.data.text);
-    const requestedEngine = parsed.data.engine ?? 'neural';
     const voice = parsed.data.voice ?? 'cs-CZ-VlastaNeural';
     const folder = path.join(tmpdir(), 'prague-ai-voice-tts');
     await mkdir(folder, { recursive: true });
 
     const mp3Path = path.join(folder, `${randomUUID()}.mp3`);
-    const wavPath = path.join(folder, `${randomUUID()}.wav`);
-
-    if (requestedEngine === 'neural' || requestedEngine === 'auto' || requestedEngine === 'edge-tts') {
-      try {
-        const result = await synthesizeWithEdgeTts(text, mp3Path, voice);
-        reply.header('Content-Type', 'audio/mpeg');
-        reply.header('Cache-Control', 'no-store');
-        reply.header('X-TTS-Engine', 'edge-tts');
-        reply.header('X-TTS-Command', result.commandLabel);
-        reply.header('X-TTS-Voice', voice);
-        reply.header('X-TTS-Bytes', String(result.bytes));
-        return reply.send(createReadStream(mp3Path).on('close', () => {
-          void rm(mp3Path, { force: true });
-        }));
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'edge-tts neural voice is unavailable';
-        request.log.warn({ error, message }, 'Neural Czech TTS failed');
-        await rm(mp3Path, { force: true });
-        if (requestedEngine === 'neural' || requestedEngine === 'edge-tts') {
-          return reply.code(503).send({
-            error: 'neural_tts_unavailable',
-            message,
-            hint: 'Otevřete /api/tts/self-test a /api/tts/status. Na Renderu má být EDGE_TTS_PYTHON=/usr/bin/python3.',
-          });
-        }
-      }
-    }
 
     try {
-      const bytes = await synthesizeWithEspeak(text, wavPath);
-      reply.header('Content-Type', 'audio/wav');
+      const result = await synthesizeWithEdgeTts(text, mp3Path, voice);
+      reply.header('Content-Type', 'audio/mpeg');
       reply.header('Cache-Control', 'no-store');
-      reply.header('X-TTS-Engine', 'espeak-ng');
-      reply.header('X-TTS-Voice', 'cs');
-      reply.header('X-TTS-Bytes', String(bytes));
-      return reply.send(createReadStream(wavPath).on('close', () => {
-        void rm(wavPath, { force: true });
+      reply.header('X-TTS-Engine', 'edge-tts');
+      reply.header('X-TTS-Command', result.commandLabel);
+      reply.header('X-TTS-Voice', voice);
+      return reply.send(createReadStream(mp3Path).on('close', () => {
+        void rm(mp3Path, { force: true });
       }));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'No Czech TTS engine is available.';
-      request.log.warn({ error, message }, 'Fallback Czech TTS failed');
-      await rm(wavPath, { force: true });
+      request.log.warn({ error }, 'Czech neural edge-tts failed');
+      await rm(mp3Path, { force: true });
       return reply.code(503).send({
-        error: 'tts_unavailable',
-        message,
-        hint: 'Neuralní hlas vyžaduje edge-tts. Na Renderu zkontrolujte Docker build a EDGE_TTS_PYTHON=/usr/bin/python3.',
+        error: 'neural_tts_unavailable',
+        message: error instanceof Error ? error.message : 'edge-tts neural voice is unavailable',
+        hint: 'Není použit browser fallback, protože může znít anglickým akcentem. Zkontrolujte EDGE_TTS_PYTHON=/usr/bin/python3 a edge-tts v Docker runtime.',
       });
     }
   });

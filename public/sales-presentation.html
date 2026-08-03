@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Prodejní prezentace — Prague AI Voice</title>
+  <style>
+    :root { --bg:#f4f7fb; --panel:#fff; --text:#122033; --muted:#64748b; --border:#dbe3ee; --primary:#2563eb; --accent:#0891b2; --good:#047857; --warn:#b45309; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter, Segoe UI, Arial, sans-serif; color:var(--text); background:radial-gradient(circle at 15% 0%, rgba(8,145,178,.18), transparent 30rem), linear-gradient(180deg,#f8fbff,var(--bg)); line-height:1.5; }
+    main { max-width:1180px; margin:0 auto; padding:28px; }
+    .topnav a { color:#1d4ed8; text-decoration:none; font-weight:900; margin-right:14px; }
+    .hero,.panel { background:var(--panel); border:1px solid var(--border); border-radius:24px; padding:22px; margin:0 0 18px; box-shadow:0 14px 35px rgba(15,23,42,.06); }
+    .hero { padding:28px; }
+    h1,h2,h3 { margin:0 0 10px; letter-spacing:-.02em; }
+    h1 { font-size:34px; }
+    p { color:var(--muted); }
+    .grid { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(340px,.8fr); gap:18px; align-items:start; }
+    .steps { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-top:16px; }
+    .step { border:1px solid var(--border); border-radius:16px; padding:13px; background:#f8fafc; }
+    .step.active { border-color:#93c5fd; background:#eff6ff; }
+    .step b { display:block; color:#0f172a; }
+    textarea,select,input { width:100%; border:1px solid var(--border); border-radius:14px; padding:12px 13px; font:inherit; background:#fff; }
+    textarea { min-height:120px; resize:vertical; }
+    label { display:block; margin:12px 0 5px; font-weight:900; }
+    button { border:0; border-radius:14px; padding:12px 16px; font:inherit; font-weight:900; cursor:pointer; color:white; background:var(--primary); margin:8px 8px 8px 0; }
+    button.secondary { color:#0f172a; background:#e8eef8; }
+    button.accent { background:var(--accent); }
+    button.good { background:var(--good); }
+    button:disabled { opacity:.55; cursor:not-allowed; }
+    pre { white-space:pre-wrap; background:#0f172a; color:#e5eefc; border-radius:16px; padding:15px; min-height:100px; overflow:auto; }
+    .metric-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+    .metric { border:1px solid var(--border); border-radius:16px; padding:14px; background:#f8fafc; }
+    .metric b { display:block; font-size:24px; color:#0f172a; }
+    .pitch { font-size:18px; color:#334155; }
+    .note { background:#eef6ff; border:1px solid #bfdbfe; color:#1e3a8a; border-radius:14px; padding:12px; }
+    audio { width:100%; margin-top:10px; }
+    .status { color:var(--muted); font-size:14px; margin-top:8px; }
+    .cta a { display:inline-block; text-decoration:none; border-radius:14px; padding:12px 16px; font-weight:900; background:#e8eef8; color:#0f172a; margin:8px 8px 0 0; }
+    .cta a.primary { color:white; background:var(--primary); }
+    @media (max-width:900px){ main{padding:16px}.grid,.metric-grid,.steps{grid-template-columns:1fr} h1{font-size:28px} }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="topnav">
+      <a href="/">Hlavní demo</a>
+      <a href="/demo-scenarios">Demo scénáře</a>
+      <a href="/booking" target="_blank" rel="noreferrer">Veřejná rezervace</a>
+    </div>
+
+    <section class="hero">
+      <h1>3minutová prezentace hlasového asistenta</h1>
+      <p class="pitch">Použijte tento režim při jednání s klientem. Stránka vede prezentaci krok za krokem: problém, ukázkový dotaz, odpověď, český hlas, rezervace a učení z neznámých dotazů.</p>
+      <div class="steps" id="steps">
+        <div class="step active"><b>1. Problém</b><span>Ztracené hovory a otázky.</span></div>
+        <div class="step"><b>2. Dotaz</b><span>Zákazník se ptá česky.</span></div>
+        <div class="step"><b>3. Odpověď</b><span>Agent odpoví okamžitě.</span></div>
+        <div class="step"><b>4. Hlas</b><span>Český MP3 hlas.</span></div>
+        <div class="step"><b>5. Rezervace</b><span>Přechod na objednání.</span></div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Ukázka pro klienta</h2>
+        <label for="scenarioSelect">Scénář</label>
+        <select id="scenarioSelect">
+          <option value="salon">Kosmetický salon</option>
+          <option value="barber">Barber shop</option>
+          <option value="restaurant">Restaurace</option>
+          <option value="clinic">Soukromá ordinace</option>
+          <option value="autoservis">Autoservis</option>
+        </select>
+        <label for="questionBox">Ukázkový dotaz zákazníka</label>
+        <textarea id="questionBox">Kolik stojí úprava obočí?
+Kde vás najdu?
+Máte zítra volný termín?</textarea>
+        <button id="runBtn">Spustit ukázku</button>
+        <button id="voiceBtn" class="accent" disabled>Přehrát odpověď hlasem</button>
+        <button id="bookingBtn" class="good">Otevřít rezervaci</button>
+        <pre id="answerBox">Klikněte na “Spustit ukázku”.</pre>
+        <audio id="audioPlayer" controls></audio>
+        <div id="statusBox" class="status"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Co říct klientovi</h2>
+        <p class="note"><b>Krátký pitch:</b><br>Asistent odpovídá na opakované otázky, neztrácí trpělivost, mluví česky a neznámé dotazy ukládá pro pozdější doplnění do FAQ.</p>
+        <div class="metric-grid">
+          <div class="metric"><b>24/7</b><span>odpovědi mimo pracovní dobu</span></div>
+          <div class="metric"><b>0 Kč</b><span>bez placeného LLM API</span></div>
+          <div class="metric"><b>FAQ</b><span>učí se z neznámých dotazů</span></div>
+        </div>
+        <h3>Demo tok</h3>
+        <ol>
+          <li>Vyberte obor klienta.</li>
+          <li>Klikněte “Spustit ukázku”.</li>
+          <li>Pusťte odpověď českým hlasem.</li>
+          <li>Otevřete veřejnou rezervaci.</li>
+          <li>Ukažte, že neznámé otázky jdou do FAQ.</li>
+        </ol>
+        <div class="cta">
+          <a class="primary" href="/unknown-questions" target="_blank" rel="noreferrer">Ukázat FAQ učení</a>
+          <a href="/admin/clients" target="_blank" rel="noreferrer">Admin klientů</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const scenarios = {
+      salon: 'Kolik stojí úprava obočí?\nKde vás najdu?\nMáte zítra volný termín?',
+      barber: 'Kolik stojí pánský střih?\nJak dlouho trvá střih a vousy?\nMůžu přijít bez rezervace?',
+      restaurant: 'Máte dnes otevřeno?\nDá se rezervovat stůl pro čtyři osoby?\nMáte polední menu?',
+      clinic: 'Kdy máte volný termín?\nKolik stojí vstupní konzultace?\nCo si mám vzít s sebou?',
+      autoservis: 'Kolik stojí základní diagnostika?\nDěláte pneuservis?\nMáte volný termín tento týden?'
+    };
+
+    const scenarioSelect = document.getElementById('scenarioSelect');
+    const questionBox = document.getElementById('questionBox');
+    const answerBox = document.getElementById('answerBox');
+    const statusBox = document.getElementById('statusBox');
+    const voiceBtn = document.getElementById('voiceBtn');
+    const audioPlayer = document.getElementById('audioPlayer');
+    let lastAnswer = '';
+
+    function setStep(index) {
+      document.querySelectorAll('.step').forEach((item, i) => item.classList.toggle('active', i === index));
+    }
+
+    scenarioSelect.onchange = () => { questionBox.value = scenarios[scenarioSelect.value] || scenarios.salon; };
+
+    async function jsonFetch(url, options) {
+      const res = await fetch(url, options);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || data.error || res.statusText);
+      return data;
+    }
+
+    document.getElementById('runBtn').onclick = async () => {
+      setStep(1);
+      answerBox.textContent = 'Zákazník se ptá...';
+      statusBox.textContent = '';
+      voiceBtn.disabled = true;
+      try {
+        const data = await jsonFetch('/api/assistant/text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: questionBox.value })
+        });
+        setStep(2);
+        lastAnswer = data.text || '';
+        answerBox.textContent = lastAnswer;
+        voiceBtn.disabled = !lastAnswer;
+        statusBox.textContent = 'Odpověď připravena. Teď ji můžete přehrát českým hlasem.';
+      } catch (error) {
+        answerBox.textContent = 'Chyba: ' + error.message;
+      }
+    };
+
+    voiceBtn.onclick = async () => {
+      if (!lastAnswer) return;
+      setStep(3);
+      statusBox.textContent = 'Generuji český hlas...';
+      const res = await fetch('/api/tts/czech', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: lastAnswer, voice: 'cs-CZ-VlastaNeural', engine: 'neural' })
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        statusBox.textContent = 'Chyba hlasu: ' + (data.message || data.error || res.statusText);
+        return;
+      }
+      const blob = await res.blob();
+      audioPlayer.src = URL.createObjectURL(blob);
+      statusBox.textContent = 'Český hlas je připravený.';
+      try { await audioPlayer.play(); } catch { statusBox.textContent = 'Český hlas je připravený. Klikněte Play.'; }
+    };
+
+    document.getElementById('bookingBtn').onclick = () => {
+      setStep(4);
+      window.open('/booking', '_blank', 'noopener,noreferrer');
+    };
+  </script>
+</body>
+</html>

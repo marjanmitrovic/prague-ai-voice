@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=210" />
+  <title>Import z webu bez LLM | Prague AI Voice</title>
+  <style>
+    :root{--bg:#f5f8fc;--card:#fff;--text:#0f172a;--muted:#64748b;--border:#d9e4f1;--primary:#2563eb;--primary-dark:#1d4ed8;--ok:#047857;--warn:#b45309;--bad:#b91c1c;--shadow:0 18px 50px rgba(15,23,42,.08);font-family:Inter,Segoe UI,Arial,sans-serif}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top left,rgba(37,99,235,.16),transparent 34rem),var(--bg);color:var(--text);line-height:1.5}.wrap{max-width:1180px;margin:0 auto;padding:28px}.hero,.card{background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:24px;box-shadow:var(--shadow)}.hero{padding:28px;margin-bottom:18px}.logo{width:220px;max-width:100%;margin-bottom:12px}.eyebrow{display:inline-flex;border-radius:999px;background:#dbeafe;color:#1d4ed8;padding:7px 11px;font-weight:900;font-size:13px}h1{margin:14px 0 8px;font-size:clamp(32px,5vw,52px);letter-spacing:-.05em;line-height:1}h2{margin:0 0 12px;font-size:25px;letter-spacing:-.03em}p{color:var(--muted)}main{display:grid;grid-template-columns:.85fr 1.15fr;gap:18px}.card{padding:20px}.grid{display:grid;gap:12px}label{display:grid;gap:7px;font-weight:850}input,textarea{width:100%;border:1px solid var(--border);border-radius:14px;padding:12px 13px;font-size:16px}button,.button{border:0;border-radius:14px;padding:13px 16px;background:var(--primary);color:#fff;font-weight:900;font-size:16px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}button:hover,.button:hover{background:var(--primary-dark)}.secondary{background:#e2e8f0;color:#0f172a}.secondary:hover{background:#cbd5e1}.status{display:none;margin-top:12px;padding:13px;border-radius:14px;font-weight:800}.status.ok{display:block;color:var(--ok);background:#ecfdf5;border:1px solid #bbf7d0}.status.bad{display:block;color:var(--bad);background:#fef2f2;border:1px solid #fecaca}.status.warn{display:block;color:var(--warn);background:#fffbeb;border:1px solid #fde68a}.result{display:grid;gap:14px}.box{border:1px solid var(--border);border-radius:16px;padding:14px;background:#fbfdff}.items{display:grid;gap:8px}.item{background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 12px}.small{font-size:13px;color:var(--muted)}.pill{display:inline-flex;border-radius:999px;background:#ecfeff;color:#0e7490;padding:4px 8px;font-size:12px;font-weight:900;margin-right:6px}.warning{color:var(--warn);font-weight:800}.preview{white-space:pre-wrap;max-height:260px;overflow:auto;font-size:13px;background:#0f172a;color:#e2e8f0;border-radius:14px;padding:14px}.actions{display:flex;gap:10px;flex-wrap:wrap}.copy{font-size:13px;color:#334155;background:#f8fafc}.hidden{display:none}@media(max-width:900px){main{grid-template-columns:1fr}.wrap{padding:16px}.actions{display:grid}.hero,.card{border-radius:18px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <img class="logo" src="/assets/prague-ai-voice-logo.svg?v=210" alt="Prague AI Voice" />
+      <div class="eyebrow">Bez LLM · kontrolovaný import</div>
+      <h1>Import údajů z webu</h1>
+      <p>Stránka stáhne HTML webu a navrhne možné kontakty, služby, ceny, adresu a otevírací dobu. Nic se automaticky neukládá. Administrátor musí všechno zkontrolovat a potvrdit ručně.</p>
+      <div class="actions">
+        <a class="button secondary" href="/">Ovládací panel</a>
+        <a class="button secondary" href="/onboarding">Onboarding</a>
+        <a class="button secondary" href="/weaknesses">Test slabin</a>
+      </div>
+    </section>
+
+    <main>
+      <section class="card">
+        <h2>Načíst web</h2>
+        <form id="importForm" class="grid">
+          <label>Admin heslo
+            <input id="adminPassword" type="password" placeholder="ADMIN_PASSWORD z Renderu" autocomplete="current-password" />
+          </label>
+          <label>URL webu firmy
+            <input id="websiteUrl" type="url" required placeholder="https://www.firma.cz" />
+          </label>
+          <button type="submit">Načíst a analyzovat</button>
+        </form>
+        <div id="status" class="status"></div>
+        <div class="box" style="margin-top:14px">
+          <strong>Důležité pravidlo</strong>
+          <p class="small">Tento import je jen pracovní návrh. Služby, ceny a otevírací dobu musí člověk zkontrolovat před uložením do profilu firmy.</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Návrh z webu</h2>
+        <div id="empty" class="box small">Zatím není načten žádný web.</div>
+        <div id="result" class="result hidden"></div>
+      </section>
+    </main>
+  </div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+function setStatus(type, message){ const el=$('status'); el.className='status '+type; el.textContent=message; }
+function itemList(items){
+  if(!items || !items.length) return '<div class="small">Nenalezeno.</div>';
+  return '<div class="items">' + items.map((item)=>`<div class="item">${escapeHtml(typeof item === 'string' ? item : item.name || JSON.stringify(item))}</div>`).join('') + '</div>';
+}
+function escapeHtml(value){ return String(value ?? '').replace(/[&<>"]/g, (c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function render(data){
+  $('empty').classList.add('hidden');
+  const s=data.suggested || {};
+  $('result').classList.remove('hidden');
+  $('result').innerHTML = `
+    <div class="box"><span class="pill">Režim</span><strong>${escapeHtml(data.message || 'Pouze návrh')}</strong></div>
+    <div class="box"><h2>Základ</h2><p><b>Název:</b> ${escapeHtml(s.title || 'Nenalezeno')}</p><p><b>Popis:</b> ${escapeHtml(s.description || 'Nenalezeno')}</p></div>
+    <div class="box"><h2>Kontakty</h2><p><b>E-maily</b></p>${itemList(s.emails)}<p><b>Telefony</b></p>${itemList(s.phones)}</div>
+    <div class="box"><h2>Adresa</h2>${itemList(s.addressCandidates)}</div>
+    <div class="box"><h2>Otevírací doba</h2>${itemList(s.openingHours)}</div>
+    <div class="box"><h2>Ceny</h2>${itemList(s.prices)}</div>
+    <div class="box"><h2>Možné služby</h2>${itemList(s.services)}</div>
+    <div class="box"><h2>Upozornění</h2>${(data.warnings || []).length ? data.warnings.map(w=>`<p class="warning">${escapeHtml(w)}</p>`).join('') : '<p class="small">Bez zásadního upozornění.</p>'}</div>
+    <div class="box"><h2>Ukázka textu pro kontrolu</h2><div class="preview">${escapeHtml(data.extractedTextPreview || '')}</div></div>
+    <div class="box copy"><b>Další krok:</b> Přepiš ověřené služby, ceny a otevírací dobu do onboarding/admin editoru. Nepřebírej automaticky vše, co stránka našla.</div>
+  `;
+}
+$('importForm').addEventListener('submit', async (event)=>{
+  event.preventDefault();
+  setStatus('warn','Načítám web a připravuji návrh...');
+  $('result').classList.add('hidden');
+  try{
+    const response = await fetch('/api/import/website', {
+      method:'POST',
+      headers:{ 'content-type':'application/json', 'x-admin-password': $('adminPassword').value.trim() },
+      body: JSON.stringify({ url: $('websiteUrl').value.trim() })
+    });
+    const data = await response.json();
+    if(!response.ok || !data.ok){ setStatus('bad', data.message || data.error || 'Import selhal.'); return; }
+    setStatus('ok','Návrh je připraven. Zkontroluj ho před ručním uložením.');
+    render(data);
+  }catch(error){ setStatus('bad','Import selhal. Web nemusí být dostupný nebo blokuje načtení.'); }
+});
+</script>
+</body>
+</html>

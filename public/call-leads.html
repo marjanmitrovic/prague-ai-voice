@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zmeškané hovory — Prague AI Voice</title>
+  <style>
+    :root { --bg:#f4f7fb; --panel:#fff; --text:#122033; --muted:#64748b; --border:#dbe3ee; --primary:#2563eb; --good:#047857; --warn:#b45309; --danger:#b91c1c; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter, Segoe UI, Arial, sans-serif; color:var(--text); background:linear-gradient(180deg,#f8fbff,var(--bg)); line-height:1.5; }
+    main { max-width:1180px; margin:0 auto; padding:28px; }
+    .topnav a { color:#1d4ed8; text-decoration:none; font-weight:900; margin-right:14px; }
+    .hero,.panel { background:var(--panel); border:1px solid var(--border); border-radius:22px; padding:20px; margin:0 0 18px; box-shadow:0 14px 35px rgba(15,23,42,.06); }
+    h1,h2,h3 { margin:0 0 10px; letter-spacing:-.02em; }
+    p { color:var(--muted); }
+    .badge { display:inline-flex; padding:4px 10px; border-radius:999px; background:#dcfce7; color:#047857; font-weight:900; font-size:13px; }
+    .grid { display:grid; grid-template-columns:minmax(320px,.8fr) minmax(0,1.2fr); gap:16px; }
+    label { display:block; font-weight:900; margin:10px 0 5px; }
+    input,select,textarea { width:100%; border:1px solid var(--border); border-radius:14px; padding:11px 12px; font:inherit; background:#fff; }
+    textarea { min-height:110px; resize:vertical; }
+    button { border:0; border-radius:14px; padding:11px 15px; font:inherit; font-weight:900; color:#fff; background:var(--primary); cursor:pointer; margin:8px 8px 0 0; }
+    button.secondary { color:#0f172a; background:#e8eef8; }
+    button.danger { background:var(--danger); }
+    table { width:100%; border-collapse:collapse; margin-top:10px; }
+    th,td { text-align:left; padding:10px; border-bottom:1px solid var(--border); vertical-align:top; }
+    th { color:#334155; background:#f8fafc; }
+    .status { display:inline-flex; padding:3px 8px; border-radius:999px; font-weight:900; font-size:12px; background:#eef6ff; color:#1d4ed8; }
+    .status.hotovo { background:#dcfce7; color:#047857; }
+    .status.nove { background:#fff7ed; color:#9a3412; }
+    .empty { padding:15px; border:1px solid #bbf7d0; background:#ecfdf5; color:#047857; border-radius:14px; font-weight:900; }
+    @media (max-width:900px){ main{padding:16px}.grid{grid-template-columns:1fr} table{font-size:14px} }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="topnav">
+      <a href="/">Ovládací panel</a>
+      <a href="/phone-connection">Telefonní napojení</a>
+      <a href="/sales-presentation">Prodejní prezentace</a>
+    </div>
+
+    <section class="hero">
+      <span class="badge">2.8.0 — Call Lead Capture</span>
+      <h1>Zachycené zmeškané hovory</h1>
+      <p>První praktický režim pro telefonii: AI asistent zachytí požadavek ze zmeškaného hovoru a uloží ho jako lead pro zpětné zavolání nebo rezervaci.</p>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Přidat ukázkový hovor</h2>
+        <label for="customerName">Jméno zákazníka</label>
+        <input id="customerName" value="Jan Novák" />
+        <label for="customerPhone">Telefon</label>
+        <input id="customerPhone" value="+420 777 111 222" />
+        <label for="serviceName">Zájem o službu</label>
+        <input id="serviceName" value="Masáž zad" />
+        <label for="message">Přepis / zpráva</label>
+        <textarea id="message">Dobrý den, chtěl bych se objednat zítra odpoledne, pokud máte volný termín.</textarea>
+        <label for="leadStatus">Status</label>
+        <select id="leadStatus">
+          <option value="nové">nové</option>
+          <option value="volat zpět">volat zpět</option>
+          <option value="rezervace">rezervace</option>
+          <option value="hotovo">hotovo</option>
+        </select>
+        <button id="saveBtn">Uložit lead</button>
+        <button id="demoBtn" class="secondary">Vložit další demo</button>
+      </div>
+
+      <div class="panel">
+        <h2>Seznam leadů</h2>
+        <div id="leadBox"></div>
+        <button id="exportBtn" class="secondary">Export CSV</button>
+        <button id="clearBtn" class="danger">Vyčistit demo data</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Další krok po této stránce</h2>
+      <p>Tento demo seznam zatím běží v prohlížeči. Další produkční krok je přidat serverové API a tabulku v databázi, aby se leady ukládaly do Neon PostgreSQL a šly posílat e-mailem majiteli firmy.</p>
+    </section>
+  </main>
+
+  <script>
+    const storageKey = 'pragueAiVoiceCallLeads';
+    const leadBox = document.getElementById('leadBox');
+    const sampleLeads = [
+      { customerName:'Petra Malá', customerPhone:'+420 777 555 111', serviceName:'Úprava obočí', message:'Volala mimo pracovní dobu, chce termín v pátek dopoledne.', status:'volat zpět' },
+      { customerName:'Karel Dvořák', customerPhone:'+420 608 222 333', serviceName:'Pánský střih', message:'Zákazník chce nejbližší volný termín po 17:00.', status:'rezervace' },
+      { customerName:'Lucie Svobodová', customerPhone:'+420 731 444 888', serviceName:'Kosmetické ošetření', message:'Ptala se na cenu a délku služby, chce potvrzení SMS.', status:'nové' }
+    ];
+
+    function loadLeads() {
+      return JSON.parse(localStorage.getItem(storageKey) || '[]');
+    }
+
+    function saveLeads(leads) {
+      localStorage.setItem(storageKey, JSON.stringify(leads));
+      render();
+    }
+
+    function readForm() {
+      return {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        createdAt: new Date().toISOString(),
+        customerName: document.getElementById('customerName').value.trim(),
+        customerPhone: document.getElementById('customerPhone').value.trim(),
+        serviceName: document.getElementById('serviceName').value.trim(),
+        message: document.getElementById('message').value.trim(),
+        status: document.getElementById('leadStatus').value,
+      };
+    }
+
+    function render() {
+      const leads = loadLeads();
+      if (!leads.length) {
+        leadBox.innerHTML = '<div class="empty">Zatím nejsou uložené žádné leady.</div>';
+        return;
+      }
+      leadBox.innerHTML = `
+        <table>
+          <thead><tr><th>Čas</th><th>Zákazník</th><th>Služba</th><th>Zpráva</th><th>Status</th></tr></thead>
+          <tbody>${leads.map((lead) => `
+            <tr>
+              <td>${new Date(lead.createdAt).toLocaleString('cs-CZ')}</td>
+              <td><b>${lead.customerName}</b><br>${lead.customerPhone}</td>
+              <td>${lead.serviceName}</td>
+              <td>${lead.message}</td>
+              <td><span class="status ${lead.status === 'hotovo' ? 'hotovo' : 'nove'}">${lead.status}</span></td>
+            </tr>
+          `).join('')}</tbody>
+        </table>`;
+    }
+
+    document.getElementById('saveBtn').onclick = () => {
+      const lead = readForm();
+      if (!lead.customerName || !lead.customerPhone || !lead.message) return alert('Vyplňte jméno, telefon a zprávu.');
+      saveLeads([lead, ...loadLeads()].slice(0, 100));
+    };
+
+    document.getElementById('demoBtn').onclick = () => {
+      const item = sampleLeads[Math.floor(Math.random() * sampleLeads.length)];
+      saveLeads([{ ...item, id:String(Date.now()), createdAt:new Date().toISOString() }, ...loadLeads()].slice(0, 100));
+    };
+
+    document.getElementById('clearBtn').onclick = () => {
+      if (!confirm('Vyčistit demo leady?')) return;
+      saveLeads([]);
+    };
+
+    document.getElementById('exportBtn').onclick = () => {
+      const leads = loadLeads();
+      const header = ['createdAt','customerName','customerPhone','serviceName','message','status'];
+      const rows = [header.join(','), ...leads.map((lead) => header.map((key) => `"${String(lead[key] || '').replaceAll('"','""')}"`).join(','))];
+      const blob = new Blob([rows.join('\n')], { type:'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'zmeskane-hovory-leady.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    render();
+  </script>
+</body>
+</html>

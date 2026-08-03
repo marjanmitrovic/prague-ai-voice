@@ -28,6 +28,7 @@
     .status.hotovo { background:#dcfce7; color:#047857; }
     .status.nove { background:#fff7ed; color:#9a3412; }
     .empty { padding:15px; border:1px solid #bbf7d0; background:#ecfdf5; color:#047857; border-radius:14px; font-weight:900; }
+    .small { color:var(--muted); font-size:13px; }
     @media (max-width:900px){ main{padding:16px}.grid{grid-template-columns:1fr} table{font-size:14px} }
   </style>
 </head>
@@ -40,16 +41,18 @@
     </div>
 
     <section class="hero">
-      <span class="badge">2.8.0 — Call Lead Capture</span>
+      <span class="badge">2.9.0 — Server Call Leads</span>
       <h1>Zachycené zmeškané hovory</h1>
-      <p>První praktický režim pro telefonii: AI asistent zachytí požadavek ze zmeškaného hovoru a uloží ho jako lead pro zpětné zavolání nebo rezervaci.</p>
+      <p>AI asistent zachytí požadavek ze zmeškaného hovoru a uloží ho jako lead pro zpětné zavolání nebo rezervaci. Data se ukládají přes serverové API; s DATABASE_URL se použije Neon PostgreSQL.</p>
     </section>
 
     <section class="grid">
       <div class="panel">
         <h2>Přidat ukázkový hovor</h2>
+        <label for="adminPassword">Administrátorské heslo pro načtení seznamu</label>
+        <input id="adminPassword" type="password" placeholder="ADMIN_PASSWORD" />
         <label for="customerName">Jméno zákazníka</label>
-        <input id="customerName" value="Jan Novák" />
+        <input id="customerName" value="" placeholder="Jméno zákazníka" />
         <label for="customerPhone">Telefon</label>
         <input id="customerPhone" value="+420 777 111 222" />
         <label for="serviceName">Zájem o službu</label>
@@ -64,45 +67,53 @@
           <option value="hotovo">hotovo</option>
         </select>
         <button id="saveBtn">Uložit lead</button>
-        <button id="demoBtn" class="secondary">Vložit další demo</button>
+        <button id="demoBtn" class="secondary">Vložit demo lead</button>
+        <p id="statusBox" class="small"></p>
       </div>
 
       <div class="panel">
         <h2>Seznam leadů</h2>
         <div id="leadBox"></div>
+        <button id="loadBtn" class="secondary">Načíst ze serveru</button>
         <button id="exportBtn" class="secondary">Export CSV</button>
-        <button id="clearBtn" class="danger">Vyčistit demo data</button>
+        <button id="clearBtn" class="danger">Vyčistit serverová data</button>
       </div>
     </section>
 
     <section class="panel">
-      <h2>Další krok po této stránce</h2>
-      <p>Tento demo seznam zatím běží v prohlížeči. Další produkční krok je přidat serverové API a tabulku v databázi, aby se leady ukládaly do Neon PostgreSQL a šly posílat e-mailem majiteli firmy.</p>
+      <h2>Produkční smysl</h2>
+      <p>Telekomunikační brána později pošle do tohoto API výsledek hovoru: jméno, telefon, službu, přepis a status. Majitel firmy pak vidí, komu má zavolat zpět.</p>
     </section>
   </main>
 
   <script>
-    const storageKey = 'pragueAiVoiceCallLeads';
     const leadBox = document.getElementById('leadBox');
+    const statusBox = document.getElementById('statusBox');
+    const adminPassword = document.getElementById('adminPassword');
+    let currentLeads = [];
+    adminPassword.value = sessionStorage.getItem('pragueAiVoiceAdminPassword') || '';
+
     const sampleLeads = [
       { customerName:'Petra Malá', customerPhone:'+420 777 555 111', serviceName:'Úprava obočí', message:'Volala mimo pracovní dobu, chce termín v pátek dopoledne.', status:'volat zpět' },
       { customerName:'Karel Dvořák', customerPhone:'+420 608 222 333', serviceName:'Pánský střih', message:'Zákazník chce nejbližší volný termín po 17:00.', status:'rezervace' },
       { customerName:'Lucie Svobodová', customerPhone:'+420 731 444 888', serviceName:'Kosmetické ošetření', message:'Ptala se na cenu a délku služby, chce potvrzení SMS.', status:'nové' }
     ];
 
-    function loadLeads() {
-      return JSON.parse(localStorage.getItem(storageKey) || '[]');
+    function headers(extra = {}) {
+      const value = adminPassword.value.trim();
+      if (value) sessionStorage.setItem('pragueAiVoiceAdminPassword', value);
+      return { ...extra, 'x-admin-password': value };
     }
 
-    function saveLeads(leads) {
-      localStorage.setItem(storageKey, JSON.stringify(leads));
-      render();
+    async function jsonFetch(url, options = {}) {
+      const res = await fetch(url, { ...options, headers: headers(options.headers || {}) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || data.error || res.statusText);
+      return data;
     }
 
     function readForm() {
       return {
-        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-        createdAt: new Date().toISOString(),
         customerName: document.getElementById('customerName').value.trim(),
         customerPhone: document.getElementById('customerPhone').value.trim(),
         serviceName: document.getElementById('serviceName').value.trim(),
@@ -111,47 +122,86 @@
       };
     }
 
-    function render() {
-      const leads = loadLeads();
-      if (!leads.length) {
+    function render(leads) {
+      currentLeads = leads || [];
+      if (!currentLeads.length) {
         leadBox.innerHTML = '<div class="empty">Zatím nejsou uložené žádné leady.</div>';
         return;
       }
       leadBox.innerHTML = `
         <table>
           <thead><tr><th>Čas</th><th>Zákazník</th><th>Služba</th><th>Zpráva</th><th>Status</th></tr></thead>
-          <tbody>${leads.map((lead) => `
+          <tbody>${currentLeads.map((lead) => `
             <tr>
               <td>${new Date(lead.createdAt).toLocaleString('cs-CZ')}</td>
               <td><b>${lead.customerName}</b><br>${lead.customerPhone}</td>
               <td>${lead.serviceName}</td>
               <td>${lead.message}</td>
-              <td><span class="status ${lead.status === 'hotovo' ? 'hotovo' : 'nove'}">${lead.status}</span></td>
+              <td>
+                <select data-id="${lead.id}">
+                  ${['nové','volat zpět','rezervace','hotovo'].map((status) => `<option value="${status}" ${lead.status === status ? 'selected' : ''}>${status}</option>`).join('')}
+                </select>
+              </td>
             </tr>
           `).join('')}</tbody>
         </table>`;
+      document.querySelectorAll('[data-id]').forEach((select) => {
+        select.addEventListener('change', async () => {
+          await jsonFetch(`/api/call-leads/${select.dataset.id}`, {
+            method:'PATCH',
+            headers:{ 'Content-Type':'application/json' },
+            body:JSON.stringify({ status: select.value })
+          });
+          statusBox.textContent = 'Status uložen.';
+          await loadLeads();
+        });
+      });
     }
 
-    document.getElementById('saveBtn').onclick = () => {
-      const lead = readForm();
-      if (!lead.customerName || !lead.customerPhone || !lead.message) return alert('Vyplňte jméno, telefon a zprávu.');
-      saveLeads([lead, ...loadLeads()].slice(0, 100));
+    async function loadLeads() {
+      const data = await jsonFetch('/api/call-leads');
+      render(data.leads || []);
+      statusBox.textContent = `Načteno: ${data.total || 0} | úložiště: ${data.storage}`;
+    }
+
+    async function createLead(input) {
+      const data = await jsonFetch('/api/call-leads', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body:JSON.stringify(input)
+      });
+      statusBox.textContent = `Lead uložen | úložiště: ${data.storage}`;
+      await loadLeads();
+    }
+
+    document.getElementById('saveBtn').onclick = async () => {
+      try {
+        const lead = readForm();
+        if (!lead.customerName || !lead.customerPhone || !lead.message) return alert('Vyplňte jméno, telefon a zprávu.');
+        await createLead(lead);
+      } catch (error) { statusBox.textContent = error.message; }
     };
 
-    document.getElementById('demoBtn').onclick = () => {
-      const item = sampleLeads[Math.floor(Math.random() * sampleLeads.length)];
-      saveLeads([{ ...item, id:String(Date.now()), createdAt:new Date().toISOString() }, ...loadLeads()].slice(0, 100));
+    document.getElementById('demoBtn').onclick = async () => {
+      try {
+        const item = sampleLeads[Math.floor(Math.random() * sampleLeads.length)];
+        await createLead(item);
+      } catch (error) { statusBox.textContent = error.message; }
     };
 
-    document.getElementById('clearBtn').onclick = () => {
-      if (!confirm('Vyčistit demo leady?')) return;
-      saveLeads([]);
+    document.getElementById('loadBtn').onclick = () => loadLeads().catch((error) => { statusBox.textContent = error.message; });
+
+    document.getElementById('clearBtn').onclick = async () => {
+      if (!confirm('Vyčistit serverové leady?')) return;
+      try {
+        await jsonFetch('/api/call-leads', { method:'DELETE' });
+        await loadLeads();
+      } catch (error) { statusBox.textContent = error.message; }
     };
 
     document.getElementById('exportBtn').onclick = () => {
-      const leads = loadLeads();
       const header = ['createdAt','customerName','customerPhone','serviceName','message','status'];
-      const rows = [header.join(','), ...leads.map((lead) => header.map((key) => `"${String(lead[key] || '').replaceAll('"','""')}"`).join(','))];
+      const rows = [header.join(','), ...currentLeads.map((lead) => header.map((key) => `"${String(lead[key] || '').replaceAll('"','""')}"`).join(','))];
       const blob = new Blob([rows.join('\n')], { type:'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -161,7 +211,7 @@
       URL.revokeObjectURL(url);
     };
 
-    render();
+    loadLeads().catch((error) => { statusBox.textContent = error.message; render([]); });
   </script>
 </body>
 </html>

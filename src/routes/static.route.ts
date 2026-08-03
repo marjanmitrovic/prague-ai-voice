@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
 const publicDir = path.resolve(process.cwd(), 'public');
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.3.1';
 
 const contentTypes: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -37,6 +37,7 @@ function applyRuntimeHtmlFixes(relativePath: string, file: Buffer): Buffer {
     .replace(/2\.1\.6/g, APP_VERSION)
     .replace(/2\.2\.0/g, APP_VERSION)
     .replace(/2\.2\.1/g, APP_VERSION)
+    .replace(/2\.3\.0/g, APP_VERSION)
     .replace(/<a href="\/weaknesses" target="_blank" rel="noreferrer">Test slabin<\/a>/g, '<a href="/weaknesses" target="_blank" rel="noreferrer">Test slabin</a>\n        <a href="/unknown-questions" target="_blank" rel="noreferrer">Nezodpovězené dotazy</a>');
 
   return Buffer.from(html, 'utf8');

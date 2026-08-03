@@ -29,6 +29,7 @@
     .status.nove { background:#fff7ed; color:#9a3412; }
     .empty { padding:15px; border:1px solid #bbf7d0; background:#ecfdf5; color:#047857; border-radius:14px; font-weight:900; }
     .small { color:var(--muted); font-size:13px; }
+    .mail-note { background:#eef6ff; border:1px solid #bfdbfe; border-radius:14px; padding:12px; color:#1e3a8a; }
     @media (max-width:900px){ main{padding:16px}.grid{grid-template-columns:1fr} table{font-size:14px} }
   </style>
 </head>
@@ -41,9 +42,9 @@
     </div>
 
     <section class="hero">
-      <span class="badge">2.9.0 — Server Call Leads</span>
+      <span class="badge">3.0.0 — Call Lead Email Notification</span>
       <h1>Zachycené zmeškané hovory</h1>
-      <p>AI asistent zachytí požadavek ze zmeškaného hovoru a uloží ho jako lead pro zpětné zavolání nebo rezervaci. Data se ukládají přes serverové API; s DATABASE_URL se použije Neon PostgreSQL.</p>
+      <p>AI asistent zachytí požadavek ze zmeškaného hovoru, uloží ho jako lead a při nastaveném SMTP odešle e-mail majiteli firmy.</p>
     </section>
 
     <section class="grid">
@@ -69,6 +70,7 @@
         <button id="saveBtn">Uložit lead</button>
         <button id="demoBtn" class="secondary">Vložit demo lead</button>
         <p id="statusBox" class="small"></p>
+        <p class="mail-note"><b>E-mail:</b> pokud jsou nastavené SMTP proměnné a BUSINESS_OWNER_EMAIL, nový lead se pošle e-mailem.</p>
       </div>
 
       <div class="panel">
@@ -82,7 +84,7 @@
 
     <section class="panel">
       <h2>Produkční smysl</h2>
-      <p>Telekomunikační brána později pošle do tohoto API výsledek hovoru: jméno, telefon, službu, přepis a status. Majitel firmy pak vidí, komu má zavolat zpět.</p>
+      <p>Telekomunikační brána později pošle do tohoto API výsledek hovoru: jméno, telefon, službu, přepis a status. Majitel firmy pak vidí, komu má zavolat zpět, a dostane okamžité upozornění e-mailem.</p>
     </section>
   </main>
 
@@ -164,13 +166,20 @@
       statusBox.textContent = `Načteno: ${data.total || 0} | úložiště: ${data.storage}`;
     }
 
+    function notificationText(notification) {
+      if (!notification) return '';
+      if (notification.sent) return ' | e-mail odeslán';
+      if (notification.skipped) return ' | e-mail přeskočen: SMTP není nastavené';
+      return ` | e-mail chyba: ${notification.reason || 'neznámá chyba'}`;
+    }
+
     async function createLead(input) {
       const data = await jsonFetch('/api/call-leads', {
         method:'POST',
         headers:{ 'Content-Type':'application/json' },
         body:JSON.stringify(input)
       });
-      statusBox.textContent = `Lead uložen | úložiště: ${data.storage}`;
+      statusBox.textContent = `Lead uložen | úložiště: ${data.storage}${notificationText(data.notification)}`;
       await loadLeads();
     }
 

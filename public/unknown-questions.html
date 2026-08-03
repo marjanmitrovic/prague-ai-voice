@@ -10,18 +10,22 @@
     body { margin:0; font-family:Inter, Segoe UI, Arial, sans-serif; background:linear-gradient(180deg,#f8fbff,var(--bg)); color:var(--text); line-height:1.5; }
     main { max-width:1120px; margin:0 auto; padding:28px; }
     .panel { background:var(--panel); border:1px solid var(--border); border-radius:18px; padding:18px; margin:0 0 18px; box-shadow:0 14px 35px rgba(15,23,42,.06); }
-    h1,h2 { margin:0 0 10px; letter-spacing:-.02em; }
+    h1,h2,h3 { margin:0 0 10px; letter-spacing:-.02em; }
     p { color:var(--muted); }
     label { display:block; font-weight:800; margin:10px 0 5px; }
-    input,select { width:100%; border:1px solid var(--border); border-radius:14px; padding:11px 12px; font:inherit; }
+    input,select,textarea { width:100%; border:1px solid var(--border); border-radius:14px; padding:11px 12px; font:inherit; }
+    textarea { min-height:92px; resize:vertical; }
     button { border:0; border-radius:14px; padding:11px 15px; font:inherit; font-weight:800; color:white; background:var(--primary); cursor:pointer; margin:8px 8px 8px 0; }
     button.danger { background:var(--danger); }
+    button.good { background:var(--good); }
     .grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
     .item { border:1px solid var(--border); border-radius:16px; padding:14px; margin:10px 0; background:#fff; }
     .meta { color:var(--muted); font-size:13px; }
     .badge { display:inline-flex; padding:3px 8px; border-radius:999px; background:#fff7ed; color:#9a3412; font-size:12px; font-weight:800; margin-left:8px; }
     .empty { color:var(--good); font-weight:800; padding:16px; background:#ecfdf5; border:1px solid #bbf7d0; border-radius:14px; }
     .topnav a { color:#1d4ed8; text-decoration:none; font-weight:800; margin-right:12px; }
+    .faq-box { margin-top:12px; border-top:1px solid var(--border); padding-top:12px; }
+    .hint { background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; border-radius:14px; padding:10px 12px; }
     @media (max-width:760px){ main{padding:16px}.grid{grid-template-columns:1fr} }
   </style>
 </head>
@@ -35,7 +39,8 @@
 
     <section class="panel">
       <h1>Nezodpovězené dotazy</h1>
-      <p>Tady se ukládají otázky, na které lokální agent odpověděl nejistě nebo fallbackem. Slouží jako seznam pro doplnění FAQ a synonym.</p>
+      <p>Tady se ukládají otázky, na které lokální agent odpověděl nejistě nebo fallbackem. Každý dotaz lze rovnou převést na FAQ odpověď.</p>
+      <div class="hint"><b>Princip:</b> napište správnou odpověď, případně klíčová slova, a klikněte na „Přidat do FAQ“. Dotaz zmizí ze seznamu a agent ho příště použije jako znalost.</div>
       <div class="grid">
         <label>Administrátorské heslo
           <input id="adminPassword" type="password" placeholder="ADMIN_PASSWORD" />
@@ -62,6 +67,15 @@
     const statusBox = document.getElementById('status');
     adminPassword.value = sessionStorage.getItem('pragueAiVoiceAdminPassword') || '';
 
+    function escapeHtml(value) {
+      return String(value || '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
     function headers() {
       const value = adminPassword.value.trim();
       if (value) sessionStorage.setItem('pragueAiVoiceAdminPassword', value);
@@ -79,7 +93,7 @@
       const res = await fetch('/api/businesses');
       const data = await res.json();
       const businesses = data.businesses || data.items || [];
-      businessSelect.innerHTML = businesses.map((item) => `<option value="${item.slug}">${item.companyName || item.slug}</option>`).join('');
+      businessSelect.innerHTML = businesses.map((item) => `<option value="${escapeHtml(item.slug)}">${escapeHtml(item.companyName || item.slug)}</option>`).join('');
       if (!businessSelect.innerHTML) businessSelect.innerHTML = '<option value="studio-aurora">Studio Aurora Praha</option>';
     }
 
@@ -88,14 +102,28 @@
         listBox.innerHTML = '<div class="empty">Zatím nejsou uložené žádné nezodpovězené dotazy.</div>';
         return;
       }
-      listBox.innerHTML = items.map((item) => `
-        <div class="item">
-          <h3>${item.question}<span class="badge">${item.count || 1}×</span></h3>
-          <div class="meta">Intent: ${item.intent} | Confidence: ${Math.round((item.confidence || 0) * 100)} % | ${new Date(item.createdAt).toLocaleString('cs-CZ')}</div>
-          <p><b>Poslední odpověď:</b><br>${item.answer || 'bez odpovědi'}</p>
-          <p><b>Doporučení:</b><br>${item.recommendation || 'Doplnit FAQ nebo synonymum.'}</p>
-        </div>
-      `).join('');
+      listBox.innerHTML = items.map((item) => {
+        const id = escapeHtml(item.id);
+        const suggestedKeywords = escapeHtml(String(item.question || '').split(/\s+/).filter((word) => word.length > 3).slice(0, 5).join(', '));
+        return `
+        <div class="item" data-id="${id}">
+          <h3>${escapeHtml(item.question)}<span class="badge">${item.count || 1}×</span></h3>
+          <div class="meta">Intent: ${escapeHtml(item.intent)} | Confidence: ${Math.round((item.confidence || 0) * 100)} % | ${new Date(item.createdAt).toLocaleString('cs-CZ')}</div>
+          <p><b>Poslední odpověď:</b><br>${escapeHtml(item.answer || 'bez odpovědi')}</p>
+          <p><b>Doporučení:</b><br>${escapeHtml(item.recommendation || 'Doplnit FAQ nebo synonymum.')}</p>
+          <div class="faq-box">
+            <label>Správná FAQ odpověď</label>
+            <textarea class="faq-answer" placeholder="Napište přesnou odpověď, kterou má agent příště použít."></textarea>
+            <label>Klíčová slova pro rozpoznání</label>
+            <input class="faq-keywords" type="text" value="${suggestedKeywords}" placeholder="např. parkování, platba kartou, pes" />
+            <button class="good promote-btn" data-id="${id}">Přidat do FAQ</button>
+          </div>
+        </div>`;
+      }).join('');
+
+      document.querySelectorAll('.promote-btn').forEach((button) => {
+        button.addEventListener('click', () => promoteToFaq(button.dataset.id));
+      });
     }
 
     async function loadUnknown() {
@@ -104,6 +132,26 @@
       const data = await jsonFetch(`/api/assistant/unknown-questions?${qs.toString()}`);
       render(data.unknownQuestions || []);
       statusBox.textContent = `Načteno: ${data.total || 0}`;
+    }
+
+    async function promoteToFaq(id) {
+      const item = document.querySelector(`[data-id="${CSS.escape(id)}"]`);
+      if (!item) return;
+      const answer = item.querySelector('.faq-answer').value.trim();
+      const keywords = item.querySelector('.faq-keywords').value.split(',').map((word) => word.trim()).filter(Boolean);
+      if (!answer) {
+        statusBox.textContent = 'Nejdříve napište správnou FAQ odpověď.';
+        return;
+      }
+
+      statusBox.textContent = 'Ukládám do FAQ...';
+      const data = await jsonFetch('/api/assistant/unknown-questions/promote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessSlug: businessSelect.value, id, answer, keywords }),
+      });
+      render(data.unknownQuestions || []);
+      statusBox.textContent = 'Dotaz byl přidán do FAQ a odstraněn ze seznamu.';
     }
 
     async function clearUnknown() {

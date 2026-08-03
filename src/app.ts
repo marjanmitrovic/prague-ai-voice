@@ -12,6 +12,7 @@ import { businessProfileRoute } from './routes/business-profile.route.js';
 import { systemRoute } from './routes/system.route.js';
 import { adminRoute } from './routes/admin.route.js';
 import { knowledgeRoute } from './routes/knowledge.route.js';
+import { websiteImportRoute } from './routes/website-import.route.js';
 import { browserVoiceRoute } from './websocket/browser-voice.route.js';
 import { initializeStorage } from './storage-postgres.js';
 
@@ -33,6 +34,7 @@ export async function buildApp() {
   await app.register(systemRoute);
   await app.register(adminRoute);
   await app.register(knowledgeRoute);
+  await app.register(websiteImportRoute);
   await app.register(browserVoiceRoute);
 
   app.setNotFoundHandler(async (_request, reply) => {

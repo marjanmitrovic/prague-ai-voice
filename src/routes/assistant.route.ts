@@ -1,7 +1,13 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { createLocalAssistantText, runWeaknessTest } from '../ai/local-business-agent.js';
-import { clearUnknownQuestions, getUnknownQuestions, publicBusinessProfile, recordUnknownQuestion } from '../business/business-profile.js';
+import {
+  clearUnknownQuestions,
+  getUnknownQuestions,
+  promoteUnknownQuestionToFaq,
+  publicBusinessProfile,
+  recordUnknownQuestion,
+} from '../business/business-profile.js';
 import { handleBookingConversation } from '../ai/booking-conversation.js';
 import { env } from '../config/env.js';
 import { requireAdmin } from '../auth.js';
@@ -20,6 +26,13 @@ const bookingConversationSchema = z.object({
 const testSuiteSchema = z.object({
   businessSlug: z.string().optional(),
   questions: z.array(z.string().trim().min(1).max(400)).min(1).max(80),
+});
+
+const promoteUnknownQuestionSchema = z.object({
+  businessSlug: z.string().optional(),
+  id: z.string().trim().min(1),
+  answer: z.string().trim().min(1).max(2000),
+  keywords: z.array(z.string().trim().min(1).max(80)).max(20).optional().default([]),
 });
 
 function splitQuestions(text: string): string[] {
@@ -109,6 +122,30 @@ export async function assistantRoute(app: FastifyInstance): Promise<void> {
     const businessSlug = safeBusinessSlug((request.query as { businessSlug?: string } | undefined)?.businessSlug || DEFAULT_BUSINESS_SLUG);
     const unknownQuestions = getUnknownQuestions(businessSlug);
     return { ok: true, businessSlug, total: unknownQuestions.length, unknownQuestions };
+  });
+
+  app.post('/api/assistant/unknown-questions/promote', async (request, reply) => {
+    if (!(await requireAdmin(request, reply))) return;
+    const parsed = promoteUnknownQuestionSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'invalid_request', details: parsed.error.flatten() });
+    }
+
+    const businessSlug = safeBusinessSlug(parsed.data.businessSlug || DEFAULT_BUSINESS_SLUG);
+    const result = await promoteUnknownQuestionToFaq({
+      businessSlug,
+      id: parsed.data.id,
+      answer: parsed.data.answer,
+      keywords: parsed.data.keywords,
+    });
+
+    return reply.send({
+      ok: true,
+      businessSlug,
+      faqItem: result.faqItem,
+      totalUnknownQuestions: result.unknownQuestions.length,
+      unknownQuestions: result.unknownQuestions,
+    });
   });
 
   app.delete('/api/assistant/unknown-questions', async (request, reply) => {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=214" />
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=216" />
   <meta name="theme-color" content="#10cfd0" />
   <title>Prague AI Voice — česká administrace</title>
   <style>
@@ -19,69 +19,57 @@
     .version { display:inline-flex; padding:4px 10px; border-radius:999px; background:#dcfce7; color:#047857; font-weight:800; font-size:13px; }
     .nav { display:grid; gap:10px; margin:24px 0; }
     .nav a { display:block; text-decoration:none; color:#1d4ed8; background:#eaf1ff; border:1px solid #c7d8ff; border-radius:14px; padding:12px 14px; font-weight:700; }
-    .grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin:22px 0; }
-    .card,.panel { background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:18px; box-shadow:0 14px 35px rgba(15,23,42,.06); }
-    .card span { display:block; color:var(--muted); font-size:13px; margin-bottom:6px; }
-    .card strong.ok { color:var(--good); }
-    .card strong.warn { color:var(--warn); }
     .two { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr); gap:18px; }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:18px; box-shadow:0 14px 35px rgba(15,23,42,.06); margin:0 0 18px; }
     label { display:block; margin:12px 0 5px; font-weight:700; }
     textarea,select,input { width:100%; border:1px solid var(--border); border-radius:14px; padding:11px 12px; font:inherit; }
     textarea { min-height:110px; resize:vertical; }
     button { border:0; border-radius:14px; padding:11px 15px; font:inherit; font-weight:800; cursor:pointer; color:white; background:var(--primary); margin:8px 8px 8px 0; }
     button.secondary { color:#0f172a; background:#e8eef8; }
     button:disabled { opacity:.55; cursor:not-allowed; }
-    pre { white-space:pre-wrap; background:#0f172a; color:#e5eefc; border-radius:14px; padding:14px; min-height:110px; overflow:auto; }
+    pre { white-space:pre-wrap; background:#0f172a; color:#e5eefc; border-radius:14px; padding:14px; min-height:90px; overflow:auto; }
     .ok { color:var(--good); font-weight:800; }
     .warn { color:var(--warn); font-weight:800; }
-    .note { background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; border-radius:14px; padding:12px; }
+    .note { background:#eef6ff; border:1px solid #bfdbfe; color:#1e3a8a; border-radius:14px; padding:12px; }
+    .silent-status { margin-top:10px; font-size:14px; color:var(--muted); }
     audio { width:100%; margin-top:12px; }
-    @media (max-width:1000px){ .layout{grid-template-columns:1fr}.grid,.two{grid-template-columns:1fr} aside{border-right:0;border-bottom:1px solid var(--border)} main{padding:18px} }
+    @media (max-width:1000px){ .layout{grid-template-columns:1fr}.two{grid-template-columns:1fr} aside{border-right:0;border-bottom:1px solid var(--border)} main{padding:18px} }
   </style>
 </head>
 <body>
   <div class="layout">
     <aside>
-      <img class="logo" src="/assets/prague-ai-voice-logo.svg?v=214" alt="Prague AI Voice" />
+      <img class="logo" src="/assets/prague-ai-voice-logo.svg?v=216" alt="Prague AI Voice" />
       <h1>Prague AI Voice</h1>
-      <p>Česká administrace <span class="version" id="versionSide">2.1.4</span></p>
+      <p>Česká administrace <span class="version" id="versionSide">2.1.6</span></p>
       <div class="nav">
         <a href="/booking" target="_blank" rel="noreferrer">Veřejná rezervace</a>
         <a href="/admin/clients" target="_blank" rel="noreferrer">Správa klientů</a>
         <a href="/onboarding" target="_blank" rel="noreferrer">Přidat klienta</a>
         <a href="/weaknesses" target="_blank" rel="noreferrer">Test slabin</a>
         <a href="/website-import" target="_blank" rel="noreferrer">Import z webu</a>
-        <a href="/tts-test" target="_blank" rel="noreferrer">Samostatný test hlasu</a>
       </div>
-      <p class="note"><b>Důležité:</b><br>Browser hlas je zde úplně vypnutý. Aplikace nesmí používat hlas prohlížeče, protože může znít anglicky nebo mužsky.</p>
+      <p class="note"><b>Český hlas:</b><br>Používá se serverový Microsoft edge-tts MP3 hlas. Browser hlas je vypnutý.</p>
     </aside>
 
     <main>
-      <h2>Ovládací panel <span class="version" id="versionTop">2.1.4</span></h2>
-      <p>Kontrolovaný demo panel bez LLM. Hlas používá pouze serverový Microsoft edge-tts MP3: <b>cs-CZ-VlastaNeural</b>.</p>
-
-      <section class="grid">
-        <div class="card"><span>Agent</span><strong id="agentStatus">kontroluji...</strong></div>
-        <div class="card"><span>Český neuralní hlas</span><strong id="ttsStatus">kontroluji...</strong></div>
-        <div class="card"><span>Rezervace</span><strong id="bookingStatus">kontroluji...</strong></div>
-        <div class="card"><span>Úložiště</span><strong id="storageStatus">kontroluji...</strong></div>
-      </section>
+      <h2>Ovládací panel <span class="version" id="versionTop">2.1.6</span></h2>
+      <p>Jednoduchý demo panel pro agenta, český hlas, aktivní profil a rezervace. Technická diagnostika a systémový výpis nejsou v uživatelském rozhraní zobrazené.</p>
 
       <section class="two">
         <div class="panel">
-          <h2>Test českého neuralního hlasu</h2>
-          <p>Ovaj test ne koristi Windows/Chrome glas. Ako server TTS ne radi, prikazaće grešku i neće pustiti engleski fallback.</p>
+          <h2>Český neuralní hlas</h2>
+          <p>Test používá pouze serverový MP3 hlas <b>cs-CZ-VlastaNeural</b>.</p>
           <label for="voiceSelect">Hlas</label>
           <select id="voiceSelect">
             <option value="cs-CZ-VlastaNeural" selected>Vlasta Neural — ženský český hlas</option>
             <option value="cs-CZ-AntoninNeural">Antonín Neural — mužský český hlas</option>
           </select>
           <label for="ttsText">Text</label>
-          <textarea id="ttsText">Dobrý den, dovolali jste se do Studia Aurora Praha. Toto je test českého neuralního hlasu Vlasta.</textarea>
-          <button id="testVoiceBtn">Vygenerovat český MP3 hlas</button>
-          <button id="selfTestBtn" class="secondary">Server self-test</button>
+          <textarea id="ttsText">Dobrý den, dovolali jste se do Studia Aurora Praha. Jak vám mohu pomoci?</textarea>
+          <button id="testVoiceBtn">Přehrát český hlas</button>
           <audio id="audioPlayer" controls></audio>
-          <pre id="ttsOutput"></pre>
+          <div id="ttsMessage" class="silent-status"></div>
         </div>
 
         <div class="panel">
@@ -95,14 +83,14 @@
         <label for="textInput">Zpráva zákazníka</label>
         <textarea id="textInput">Dobrý den, kdy máte otevřeno?</textarea>
         <button id="sendAiBtn">Odeslat lokálnímu agentovi</button>
-        <button id="speakAnswerBtn" class="secondary" disabled>Přehrát odpověď přes český MP3</button>
+        <button id="speakAnswerBtn" class="secondary" disabled>Přehrát odpověď českým hlasem</button>
         <pre id="assistantOutput"></pre>
       </section>
 
       <section class="panel">
-        <h2>Systémový stav</h2>
-        <button id="refreshBtn" class="secondary">Obnovit stav</button>
-        <pre id="systemOutput"></pre>
+        <h2>Rezervace</h2>
+        <p>Pro správu a export rezervací použijte samostatnou stránku pro správu klientů.</p>
+        <a class="nav-link" href="/admin/clients" target="_blank" rel="noreferrer">Otevřít správu klientů</a>
       </section>
     </main>
   </div>
@@ -110,13 +98,8 @@
   <script>
     const versionTop = document.getElementById('versionTop');
     const versionSide = document.getElementById('versionSide');
-    const agentStatus = document.getElementById('agentStatus');
-    const ttsStatus = document.getElementById('ttsStatus');
-    const bookingStatus = document.getElementById('bookingStatus');
-    const storageStatus = document.getElementById('storageStatus');
-    const systemOutput = document.getElementById('systemOutput');
     const profileBox = document.getElementById('profileBox');
-    const ttsOutput = document.getElementById('ttsOutput');
+    const ttsMessage = document.getElementById('ttsMessage');
     const audioPlayer = document.getElementById('audioPlayer');
     const voiceSelect = document.getElementById('voiceSelect');
     const ttsText = document.getElementById('ttsText');
@@ -125,8 +108,6 @@
     const speakAnswerBtn = document.getElementById('speakAnswerBtn');
     let lastAssistantText = '';
 
-    function setClass(el, ok) { el.className = ok ? 'ok' : 'warn'; }
-
     async function jsonFetch(url, options) {
       const res = await fetch(url, options);
       const data = await res.json().catch(() => ({}));
@@ -134,35 +115,14 @@
       return data;
     }
 
-    async function loadStatus() {
+    async function loadVersion() {
       try {
         const data = await jsonFetch('/api/system/status');
-        versionTop.textContent = data.version || '2.1.4';
-        versionSide.textContent = data.version || '2.1.4';
-        bookingStatus.textContent = `${data.activeBookingsCount || 0} aktivních rezervací`;
-        storageStatus.textContent = data.storage || 'neznámé';
-        setClass(bookingStatus, true); setClass(storageStatus, true);
-        systemOutput.textContent = JSON.stringify(data, null, 2);
-      } catch (error) {
-        bookingStatus.textContent = 'chyba'; storageStatus.textContent = 'chyba';
-        setClass(bookingStatus, false); setClass(storageStatus, false);
-        systemOutput.textContent = String(error.message || error);
-      }
-
-      try {
-        const data = await jsonFetch('/api/assistant/status');
-        agentStatus.textContent = data.ok ? `lokální režim za ${data.profile.companyName}` : 'agent není připravený';
-        setClass(agentStatus, Boolean(data.ok));
-      } catch (error) {
-        agentStatus.textContent = 'chyba agenta'; setClass(agentStatus, false);
-      }
-
-      try {
-        const data = await jsonFetch('/api/tts/status');
-        ttsStatus.textContent = data.edgeTts?.ok ? `edge-tts OK (${data.edgeTts.defaultVoice || 'cs-CZ-VlastaNeural'})` : 'edge-tts není dostupný';
-        setClass(ttsStatus, Boolean(data.edgeTts?.ok));
-      } catch (error) {
-        ttsStatus.textContent = 'TTS chyba'; setClass(ttsStatus, false);
+        versionTop.textContent = data.version || '2.1.6';
+        versionSide.textContent = data.version || '2.1.6';
+      } catch {
+        versionTop.textContent = '2.1.6';
+        versionSide.textContent = '2.1.6';
       }
     }
 
@@ -177,7 +137,7 @@
     }
 
     async function playServerCzech(text) {
-      ttsOutput.textContent = 'Generuji MP3 přes serverový edge-tts...';
+      ttsMessage.textContent = 'Generuji český MP3 hlas...';
       audioPlayer.removeAttribute('src');
       const res = await fetch('/api/tts/czech', {
         method: 'POST',
@@ -191,18 +151,13 @@
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       audioPlayer.src = url;
-      ttsOutput.textContent = 'MP3 je vygenerovaný. Pokud se nespustí automaticky, klikněte Play v audio přehrávači. Browser fallback je vypnutý.';
-      try { await audioPlayer.play(); } catch { ttsOutput.textContent += '\nAutomatické přehrání bylo blokováno prohlížečem. Klikněte ručně Play.'; }
+      ttsMessage.textContent = 'Český MP3 hlas je připravený.';
+      try { await audioPlayer.play(); } catch { ttsMessage.textContent = 'Český MP3 hlas je připravený. Klikněte Play v přehrávači.'; }
     }
 
     document.getElementById('testVoiceBtn').onclick = async () => {
       try { await playServerCzech(ttsText.value); }
-      catch (error) { ttsOutput.textContent = 'Chyba českého neuralního hlasu: ' + error.message; }
-    };
-
-    document.getElementById('selfTestBtn').onclick = async () => {
-      try { ttsOutput.textContent = JSON.stringify(await jsonFetch('/api/tts/self-test'), null, 2); }
-      catch (error) { ttsOutput.textContent = 'Self-test chyba: ' + error.message; }
+      catch (error) { ttsMessage.textContent = 'Chyba českého hlasu: ' + error.message; }
     };
 
     document.getElementById('sendAiBtn').onclick = async () => {
@@ -219,11 +174,10 @@
     speakAnswerBtn.onclick = async () => {
       if (!lastAssistantText) return;
       try { await playServerCzech(lastAssistantText); }
-      catch (error) { ttsOutput.textContent = 'Chyba českého neuralního hlasu: ' + error.message; }
+      catch (error) { ttsMessage.textContent = 'Chyba českého hlasu: ' + error.message; }
     };
 
-    document.getElementById('refreshBtn').onclick = loadStatus;
-    loadStatus();
+    loadVersion();
     loadProfile();
   </script>
 </body>

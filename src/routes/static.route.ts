@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
 const publicDir = path.resolve(process.cwd(), 'public');
+const APP_VERSION = '2.1.2';
 
 const contentTypes: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -27,6 +28,18 @@ function safePublicPath(relativePath: string): string | null {
   return absolutePath;
 }
 
+function applyRuntimeHtmlFixes(relativePath: string, file: Buffer): Buffer {
+  if (relativePath !== 'index.html') return file;
+
+  const html = file.toString('utf8')
+    .replace(/1\.9\.1 Česká verze/g, `${APP_VERSION} Česká verze`)
+    .replace(/<span class="pill">1\.9\.0<\/span>/g, `<span class="pill">${APP_VERSION}</span>`)
+    .replace(/Verze 2\.0\.0\. Bez LLM, s FAQ a testem slabých míst\./g, `Verze ${APP_VERSION}. Bez LLM, s FAQ, importem webu a testem českého neuralního hlasu.`)
+    .replace(/<a class="nav-link" href="\/weaknesses" target="_blank" rel="noreferrer">Test slabin<\/a>/g, '<a class="nav-link" href="/weaknesses" target="_blank" rel="noreferrer">Test slabin</a>\n        <a class="nav-link" href="/tts-test" target="_blank" rel="noreferrer">Test hlasu</a>');
+
+  return Buffer.from(html, 'utf8');
+}
+
 async function sendPublicFile(reply: FastifyReply, relativePath: string): Promise<FastifyReply> {
   const absolutePath = safePublicPath(relativePath);
   if (!absolutePath) {
@@ -34,7 +47,8 @@ async function sendPublicFile(reply: FastifyReply, relativePath: string): Promis
   }
 
   try {
-    const file = await readFile(absolutePath);
+    const rawFile = await readFile(absolutePath);
+    const file = applyRuntimeHtmlFixes(relativePath, rawFile);
     const extension = path.extname(absolutePath).toLowerCase();
     const type = contentTypes[extension] ?? 'application/octet-stream';
     return reply.type(type).send(file);

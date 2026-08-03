@@ -1,9 +1,9 @@
 {
   "name": "prague-ai-voice",
-  "version": "2.1.6",
+  "version": "2.2.0",
   "private": true,
   "type": "module",
-  "description": "Prague AI Voice - čisté české demo UI bez zobrazené technické diagnostiky a systémového výpisu",
+  "description": "Prague AI Voice - no-LLM český agent s rozšířenými synonymy a lepším rozpoznáním frází",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",

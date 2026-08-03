@@ -1,9 +1,9 @@
 {
   "name": "prague-ai-voice",
-  "version": "2.9.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
-  "description": "Prague AI Voice - serverové ukládání zmeškaných hovorů jako leadů přes API a Neon PostgreSQL",
+  "description": "Prague AI Voice - email upozornění majiteli firmy při novém zachyceném zmeškaném hovoru",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",

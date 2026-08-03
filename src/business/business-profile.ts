@@ -32,11 +32,21 @@ const bookingRulesSchema = z.object({
   closedDates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).default([]),
 });
 
-
 const knowledgeFaqSchema = z.object({
   question: z.string().min(1),
   answer: z.string().min(1),
   keywords: z.array(z.string().min(1)).default([]),
+});
+
+const unknownQuestionSchema = z.object({
+  id: z.string().min(1),
+  question: z.string().min(1),
+  answer: z.string().min(1).optional().default(''),
+  intent: z.string().min(1),
+  confidence: z.number().min(0).max(1),
+  recommendation: z.string().min(1),
+  createdAt: z.string().min(1),
+  count: z.number().int().min(1).default(1),
 });
 
 const vocabularySchema = z.object({
@@ -74,14 +84,25 @@ const businessProfileSchema = z.object({
   }),
   knowledgeBase: z.array(knowledgeFaqSchema).default([]),
   vocabulary: vocabularySchema,
+  unknownQuestions: z.array(unknownQuestionSchema).default([]),
 });
 
 export type BusinessProfile = z.infer<typeof businessProfileSchema>;
 export type BusinessService = BusinessProfile['services'][number];
 export type DayKey = z.infer<typeof dayKeySchema>;
-
+export type UnknownQuestion = BusinessProfile['unknownQuestions'][number];
 
 const profileCache = new Map<string, BusinessProfile>();
+
+function unknownQuestionId(question: string): string {
+  return question
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || `unknown-${Date.now()}`;
+}
 
 export function loadBusinessProfile(businessSlug = DEFAULT_BUSINESS_SLUG): BusinessProfile {
   const slug = safeBusinessSlug(businessSlug);
@@ -152,7 +173,6 @@ export function listPublicBusinesses() {
   return listBusinessSummaries();
 }
 
-
 export function getKnowledgeBase(businessSlug = DEFAULT_BUSINESS_SLUG) {
   return getBusinessProfile(businessSlug).knowledgeBase;
 }
@@ -166,4 +186,56 @@ export async function saveKnowledgeBase(input: unknown, businessSlug = DEFAULT_B
   const profile = getBusinessProfile(businessSlug);
   const saved = await saveBusinessProfile({ ...profile, knowledgeBase: parsed.data }, businessSlug);
   return saved.knowledgeBase;
+}
+
+export function getUnknownQuestions(businessSlug = DEFAULT_BUSINESS_SLUG) {
+  return getBusinessProfile(businessSlug).unknownQuestions
+    .slice()
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function recordUnknownQuestion(input: {
+  businessSlug?: string;
+  question: string;
+  answer?: string;
+  intent: string;
+  confidence: number;
+  recommendation?: string;
+}) {
+  const slug = safeBusinessSlug(input.businessSlug || DEFAULT_BUSINESS_SLUG);
+  const question = input.question.trim();
+  if (!question) return getUnknownQuestions(slug);
+
+  const profile = getBusinessProfile(slug);
+  const id = unknownQuestionId(question);
+  const existing = profile.unknownQuestions.find((item) => item.id === id);
+  const now = new Date().toISOString();
+  const nextUnknownQuestions = existing
+    ? profile.unknownQuestions.map((item) => item.id === id
+        ? { ...item, count: item.count + 1, createdAt: now, answer: input.answer || item.answer, intent: input.intent, confidence: input.confidence }
+        : item)
+    : [
+        {
+          id,
+          question,
+          answer: input.answer || '',
+          intent: input.intent,
+          confidence: input.confidence,
+          recommendation: input.recommendation || 'Doplnit odpověď do FAQ nebo přidat synonymum.',
+          createdAt: now,
+          count: 1,
+        },
+        ...profile.unknownQuestions,
+      ];
+
+  const trimmed = nextUnknownQuestions.slice(0, 100);
+  const saved = await saveBusinessProfile({ ...profile, unknownQuestions: trimmed }, slug);
+  return saved.unknownQuestions;
+}
+
+export async function clearUnknownQuestions(businessSlug = DEFAULT_BUSINESS_SLUG) {
+  const slug = safeBusinessSlug(businessSlug);
+  const profile = getBusinessProfile(slug);
+  const saved = await saveBusinessProfile({ ...profile, unknownQuestions: [] }, slug);
+  return saved.unknownQuestions;
 }

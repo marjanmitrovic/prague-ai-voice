@@ -82,7 +82,9 @@ async function findEdgeTtsCandidate(): Promise<{ candidate: CommandCandidate | n
 
   for (const candidate of getEdgeTtsCandidates()) {
     const check = await checkCommand(candidate.command, [...candidate.baseArgs, '--list-voices']);
-    checks.push({ label: candidate.label, ok: check.ok, ...(check.ok ? {} : { error: check.error }) });
+    const result: CommandCheck = { label: candidate.label, ok: check.ok };
+    if (!check.ok) result.error = check.error;
+    checks.push(result);
     if (check.ok) return { candidate, checks };
   }
 
@@ -142,10 +144,11 @@ export async function ttsRoute(app: FastifyInstance): Promise<void> {
     return {
       ok: edgeAvailable || espeakAvailable,
       preferredEngine: edgeAvailable ? 'edge-tts' : espeakAvailable ? 'espeak-ng' : null,
+      note: 'Tento status jen ověřuje dostupnost příkazu. Pro skutečný test hlasu otevřete /api/tts/self-test.',
       renderHint: {
         edgeTtsPython: env.EDGE_TTS_PYTHON || null,
         expectedRenderValue: '/usr/bin/python3',
-        note: 'Na Renderu musí být v Docker runtime nainstalovaný python3 a edge-tts. Aplikace neukládá audio trvale, generuje ho do /tmp.',
+        note: 'Na Renderu musí být v Docker runtime nainstalovaný python3 a edge-tts. Aplikace generuje audio do /tmp.',
       },
       edgeTts: {
         ok: edgeAvailable,
@@ -162,6 +165,41 @@ export async function ttsRoute(app: FastifyInstance): Promise<void> {
         quality: 'robotic-offline-fallback',
       },
     };
+  });
+
+  app.get('/api/tts/self-test', async (request, reply) => {
+    const folder = path.join(tmpdir(), 'prague-ai-voice-tts');
+    await mkdir(folder, { recursive: true });
+    const mp3Path = path.join(folder, `${randomUUID()}-self-test.mp3`);
+    const testText = 'Dobrý den. Toto je skutečný test českého neuralního hlasu Vlasta pro Prague AI Voice.';
+
+    try {
+      const result = await synthesizeWithEdgeTts(testText, mp3Path, 'cs-CZ-VlastaNeural');
+      await rm(mp3Path, { force: true });
+      return {
+        ok: true,
+        engine: 'edge-tts',
+        command: result.commandLabel,
+        voice: 'cs-CZ-VlastaNeural',
+        bytes: result.bytes,
+        accent: 'cs-CZ neural',
+        message: 'Skutečné generování MP3 proběhlo úspěšně.',
+      };
+    } catch (error) {
+      await rm(mp3Path, { force: true });
+      const edge = await findEdgeTtsCandidate();
+      request.log.warn({ error }, 'Czech neural TTS self-test failed');
+      return reply.code(503).send({
+        ok: false,
+        error: 'czech_neural_self_test_failed',
+        message: error instanceof Error ? error.message : 'Český neuralní hlas nelze vygenerovat.',
+        edgeTts: {
+          command: edge.candidate?.label ?? null,
+          checks: edge.checks,
+        },
+        fix: 'Na Renderu zkontrolujte Environment EDGE_TTS_PYTHON=/usr/bin/python3 a proveďte Clear build cache & deploy.',
+      });
+    }
   });
 
   app.post('/api/tts/czech', async (request, reply) => {
@@ -199,7 +237,7 @@ export async function ttsRoute(app: FastifyInstance): Promise<void> {
           return reply.code(503).send({
             error: 'neural_tts_unavailable',
             message,
-            hint: 'Otevřete /api/tts/status a zkontrolujte edgeTts.checks. Na Renderu má být EDGE_TTS_PYTHON=/usr/bin/python3.',
+            hint: 'Otevřete /api/tts/self-test a /api/tts/status. Na Renderu má být EDGE_TTS_PYTHON=/usr/bin/python3.',
           });
         }
       }

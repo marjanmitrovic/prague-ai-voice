@@ -1,0 +1,23 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+coverage/
+
+# local environment
+.env
+.env.*
+!.env.example
+
+# local runtime data
+logs/
+*.log
+*.mp3
+*.wav
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

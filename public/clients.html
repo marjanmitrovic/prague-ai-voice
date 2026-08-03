@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=200" />
+  <title>Správa klientů — Prague AI Voice</title>
+  <style>
+    :root{--bg:#f4f7fb;--panel:#fff;--text:#122033;--muted:#64748b;--border:#dbe3ee;--primary:#2563eb;--primary-dark:#1d4ed8;--good:#0f8a3b;--danger:#b91c1c;--radius:18px;--shadow:0 18px 45px rgba(15,23,42,.08);font-family:Inter,Segoe UI,Arial,sans-serif}*{box-sizing:border-box}body{margin:0;color:var(--text);background:radial-gradient(circle at top left,rgba(37,99,235,.12),transparent 32rem),linear-gradient(180deg,#f8fbff 0%,var(--bg) 100%);line-height:1.5}a{color:var(--primary);text-decoration:none;font-weight:800}.wrap{max-width:1180px;margin:0 auto;padding:28px}.top{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:22px}.top h1{margin:0;font-size:38px;letter-spacing:-.04em}.site-logo{width:230px;max-width:100%;background:#fff;border-radius:16px;padding:8px 12px;border:1px solid var(--border);box-shadow:0 10px 24px rgba(15,23,42,.08);margin-bottom:14px}.top p,.small{color:var(--muted)}.actions{display:flex;gap:10px;flex-wrap:wrap}.button,button{border:0;border-radius:13px;padding:11px 15px;cursor:pointer;color:#fff;background:var(--primary);font-weight:900;font-size:15px;text-decoration:none;display:inline-flex;justify-content:center;align-items:center}.button:hover,button:hover{background:var(--primary-dark)}.secondary{background:#e8eef8!important;color:var(--text)!important}.panel{background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:18px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 10px 28px rgba(15,23,42,.05)}.card h3{margin:0 0 6px}.pill{display:inline-flex;padding:4px 9px;border-radius:999px;background:#ecfdf5;color:#047857;font-size:12px;font-weight:900}.links{display:grid;gap:8px;margin-top:12px}.linkbox{border:1px dashed var(--border);border-radius:12px;padding:10px;background:#f8fafc;word-break:break-all}.status{font-weight:850}.ok{color:var(--good)}.empty{border:1px dashed var(--border);border-radius:14px;padding:18px;color:var(--muted);background:#f8fafc}.tablewrap{overflow:auto}.table{width:100%;border-collapse:collapse}.table th,.table td{border-bottom:1px solid var(--border);padding:10px;text-align:left;font-size:14px}.table th{color:var(--muted);font-weight:900}@media(max-width:900px){.top{display:block}.grid{grid-template-columns:1fr}.actions{margin-top:14px}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="top">
+      <div>
+        <img class="site-logo" src="/assets/prague-ai-voice-logo.svg?v=200" alt="Prague AI Voice" />
+        <h1>Správa klientů</h1>
+        <p>Přehled firem, rezervačních odkazů a rezervací bez technických výpisů.</p>
+      </div>
+      <div class="actions">
+        <a class="button secondary" href="/">Ovládací panel</a>
+        <a class="button secondary" href="/onboarding">Přidat klienta</a>
+        <a class="button secondary" href="/weaknesses">Test slabin</a>
+        <a class="button secondary" href="/sales">Prodejní stránka</a>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Klienti</h2>
+      <p class="small">Vyberte klienta pro otevření jeho rezervační stránky, stažení CSV nebo zobrazení rezervací.</p>
+      <div id="clients" class="grid"></div>
+      <div id="clientsEmpty" class="empty" style="display:none">Zatím nejsou načteni žádní klienti.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Rezervace vybraného klienta</h2>
+      <p id="selectedClient" class="small">Vyberte klienta výše.</p>
+      <div id="bookings" class="tablewrap"></div>
+    </section>
+  </main>
+
+<script>
+const clientsEl = document.getElementById('clients');
+const emptyEl = document.getElementById('clientsEmpty');
+const bookingsEl = document.getElementById('bookings');
+const selectedClientEl = document.getElementById('selectedClient');
+function esc(s){ return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function bookingUrl(slug){ return `/booking/${encodeURIComponent(slug)}`; }
+async function copyText(text){ try{ await navigator.clipboard.writeText(location.origin + text); alert('Odkaz zkopírován.'); }catch{ prompt('Zkopírujte odkaz:', location.origin + text); } }
+async function loadClients(){
+  const res = await fetch('/api/businesses');
+  const data = await res.json();
+  const businesses = data.businesses || [];
+  emptyEl.style.display = businesses.length ? 'none' : 'block';
+  clientsEl.innerHTML = businesses.map(b => {
+    const url = bookingUrl(b.slug);
+    return `<article class="card">
+      <span class="pill">${esc(b.servicesCount)} služeb</span>
+      <h3>${esc(b.companyName)}</h3>
+      <p class="small">${esc(b.description || 'Bez popisu')}</p>
+      <div class="linkbox">${esc(url)}</div>
+      <div class="links">
+        <a class="button" href="${url}" target="_blank" rel="noreferrer">Otevřít rezervaci</a>
+        <button class="secondary" type="button" onclick="copyText('${url}')">Kopírovat odkaz</button>
+        <button type="button" onclick="loadBookings('${esc(b.slug)}','${esc(b.companyName)}')">Zobrazit rezervace</button>
+        <a class="button secondary" href="/api/bookings/export.csv?businessSlug=${encodeURIComponent(b.slug)}">Stáhnout CSV</a>
+        <a class="button secondary" href="/api/system/backup.json?businessSlug=${encodeURIComponent(b.slug)}">Stáhnout zálohu</a>
+      </div>
+    </article>`;
+  }).join('');
+}
+async function loadBookings(slug, name){
+  selectedClientEl.textContent = `${name} · ${slug}`;
+  bookingsEl.innerHTML = '<p class="small">Načítám rezervace...</p>';
+  const res = await fetch(`/api/bookings?businessSlug=${encodeURIComponent(slug)}`);
+  const data = await res.json();
+  const bookings = data.bookings || [];
+  if(!bookings.length){ bookingsEl.innerHTML = '<div class="empty">Tento klient zatím nemá žádné rezervace.</div>'; return; }
+  bookingsEl.innerHTML = `<table class="table"><thead><tr><th>Datum</th><th>Čas</th><th>Služba</th><th>Jméno</th><th>Telefon</th><th>Stav</th></tr></thead><tbody>${bookings.map(b => `<tr><td>${esc(b.date)}</td><td>${esc(b.time)}</td><td>${esc(b.serviceName)}</td><td>${esc(b.customerName)}</td><td>${esc(b.customerPhone)}</td><td>${esc(b.status)}</td></tr>`).join('')}</tbody></table>`;
+}
+loadClients().catch(() => { emptyEl.style.display='block'; emptyEl.textContent='Nepodařilo se načíst klienty.'; });
+</script>
+</body>
+</html>

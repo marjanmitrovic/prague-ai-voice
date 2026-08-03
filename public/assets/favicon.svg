@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Prague AI Voice icon">
+  <defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#0ea5e9"/></linearGradient></defs>
+  <rect width="512" height="512" rx="108" fill="#f8fbff"/>
+  <path d="M241 60c-94 0-170 69-170 154 0 51 27 96 69 124l-25 73 86-42c13 3 26 4 40 4 94 0 170-71 170-157S335 60 241 60Z" fill="#fff" stroke="url(#g)" stroke-width="30"/>
+  <path d="M142 267h196" stroke="#0f2f57" stroke-width="23" stroke-linecap="round"/>
+  <path d="M163 254v-83l27 28 19-76 27 75 19-53 22 62 30-34 16 81" fill="#0f2f57"/>
+  <g stroke="url(#g)" stroke-width="20" stroke-linecap="round"><path d="M183 314v48"/><path d="M222 288v101"/><path d="M261 288v101"/><path d="M300 314v48"/></g>
+</svg>

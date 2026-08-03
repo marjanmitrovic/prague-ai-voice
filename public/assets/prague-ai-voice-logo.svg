@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="260" viewBox="0 0 960 260" role="img" aria-label="Prague AI Voice">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#22d3ee"/>
+      <stop offset="1" stop-color="#0ea5e9"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#0f172a" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+  <rect width="960" height="260" rx="38" fill="#ffffff"/>
+  <g transform="translate(34 34)" filter="url(#shadow)">
+    <path d="M92 8c-47 0-84 34-84 78 0 27 14 50 36 64l-12 36 44-21c6 1 11 1 16 1 47 0 84-36 84-79S139 8 92 8Z" fill="#fff" stroke="url(#g)" stroke-width="15"/>
+    <path d="M42 122h100" stroke="#0f2f57" stroke-width="9" stroke-linecap="round"/>
+    <path d="M55 116V76l12 12 10-37 13 36 9-26 11 31 14-17 7 41" fill="#0f2f57"/>
+    <g stroke="url(#g)" stroke-width="8" stroke-linecap="round">
+      <path d="M65 145v24"/><path d="M82 132v50"/><path d="M99 132v50"/><path d="M116 145v24"/>
+    </g>
+    <g stroke="url(#g)" stroke-width="7" stroke-linecap="round" fill="none">
+      <path d="M145 60h34l16-16h24"/><circle cx="226" cy="44" r="8" fill="#fff"/>
+      <path d="M150 90h54l13-13h24"/><circle cx="248" cy="77" r="8" fill="#fff"/>
+      <path d="M145 120h30l15 18h36"/><circle cx="234" cy="138" r="8" fill="#fff"/>
+    </g>
+  </g>
+  <text x="300" y="152" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="78" font-weight="900" fill="#0f2f57" letter-spacing="-3">Prague <tspan fill="#10c4d4">AI</tspan> Voice</text>
+  <text x="304" y="195" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24" font-weight="700" fill="#64748b">hlasový AI asistent pro rezervace</text>
+</svg>

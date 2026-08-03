@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
 const publicDir = path.resolve(process.cwd(), 'public');
-const APP_VERSION = '2.4.0';
+const APP_VERSION = '2.5.0';
 
 const contentTypes: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -38,7 +38,10 @@ function applyRuntimeHtmlFixes(relativePath: string, file: Buffer): Buffer {
     .replace(/2\.2\.0/g, APP_VERSION)
     .replace(/2\.2\.1/g, APP_VERSION)
     .replace(/2\.3\.0/g, APP_VERSION)
-    .replace(/2\.3\.1/g, APP_VERSION);
+    .replace(/2\.3\.1/g, APP_VERSION)
+    .replace(/2\.4\.0/g, APP_VERSION)
+    .replace(/<a href="#demoVoice">Test českého hlasu<\/a>/g, '<a href="#demoVoice">Test českého hlasu</a>\n        <a href="/demo-scenarios" target="_blank" rel="noreferrer">Demo scénáře</a>')
+    .replace(/<a href="\/website-import" target="_blank" rel="noreferrer">Import z webu<\/a>/g, '<a href="/website-import" target="_blank" rel="noreferrer">Import z webu</a>\n          <a href="/demo-scenarios" target="_blank" rel="noreferrer">Demo scénáře</a>');
 
   return Buffer.from(html, 'utf8');
 }
@@ -73,6 +76,9 @@ export async function staticRoute(app: FastifyInstance): Promise<void> {
   app.get('/assets/*', async (request: FastifyRequest<{ Params: { '*': string } }>, reply) => {
     return sendPublicFile(reply, `assets/${request.params['*']}`);
   });
+
+  app.get('/demo-scenarios', async (_request, reply) => sendPublicFile(reply, 'demo-scenarios.html'));
+  app.get('/admin/demo-scenarios', async (_request, reply) => sendPublicFile(reply, 'demo-scenarios.html'));
 
   app.get('/unknown-questions', async (_request, reply) => sendPublicFile(reply, 'unknown-questions.html'));
   app.get('/admin/unknown-questions', async (_request, reply) => sendPublicFile(reply, 'unknown-questions.html'));

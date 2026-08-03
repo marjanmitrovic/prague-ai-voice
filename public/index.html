@@ -3,61 +3,122 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=216" />
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=240" />
   <meta name="theme-color" content="#10cfd0" />
-  <title>Prague AI Voice — česká administrace</title>
+  <title>Prague AI Voice — český hlasový asistent</title>
   <style>
-    :root { --bg:#f4f7fb; --panel:#fff; --text:#122033; --muted:#64748b; --border:#dbe3ee; --primary:#2563eb; --good:#047857; --warn:#b45309; --radius:18px; }
+    :root { --bg:#f4f7fb; --panel:#fff; --text:#122033; --muted:#64748b; --border:#dbe3ee; --primary:#2563eb; --primary2:#0891b2; --good:#047857; --warn:#b45309; --radius:20px; }
     * { box-sizing:border-box; }
-    body { margin:0; font-family:Inter, Segoe UI, Arial, sans-serif; color:var(--text); background:linear-gradient(180deg,#f8fbff 0%,var(--bg) 100%); line-height:1.5; }
-    .layout { display:grid; grid-template-columns:300px minmax(0,1fr); min-height:100vh; }
-    aside { padding:24px; background:rgba(255,255,255,.86); border-right:1px solid var(--border); }
+    body { margin:0; font-family:Inter, Segoe UI, Arial, sans-serif; color:var(--text); background:radial-gradient(circle at 15% 0%, rgba(8,145,178,.16), transparent 28rem), linear-gradient(180deg,#f8fbff 0%,var(--bg) 100%); line-height:1.5; }
+    .layout { display:grid; grid-template-columns:310px minmax(0,1fr); min-height:100vh; }
+    aside { padding:24px; background:rgba(255,255,255,.9); border-right:1px solid var(--border); }
     main { padding:32px; }
-    img.logo { width:100%; max-width:250px; background:#fff; border-radius:16px; padding:10px; border:1px solid var(--border); }
+    img.logo { width:100%; max-width:255px; background:#fff; border-radius:18px; padding:10px; border:1px solid var(--border); }
     h1,h2,h3 { margin:0 0 10px; letter-spacing:-.02em; }
+    h1 { font-size:26px; }
+    h2 { font-size:25px; }
     p { color:var(--muted); }
     .version { display:inline-flex; padding:4px 10px; border-radius:999px; background:#dcfce7; color:#047857; font-weight:800; font-size:13px; }
     .nav { display:grid; gap:10px; margin:24px 0; }
-    .nav a { display:block; text-decoration:none; color:#1d4ed8; background:#eaf1ff; border:1px solid #c7d8ff; border-radius:14px; padding:12px 14px; font-weight:700; }
-    .two { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr); gap:18px; }
-    .panel { background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:18px; box-shadow:0 14px 35px rgba(15,23,42,.06); margin:0 0 18px; }
-    label { display:block; margin:12px 0 5px; font-weight:700; }
-    textarea,select,input { width:100%; border:1px solid var(--border); border-radius:14px; padding:11px 12px; font:inherit; }
-    textarea { min-height:110px; resize:vertical; }
-    button { border:0; border-radius:14px; padding:11px 15px; font:inherit; font-weight:800; cursor:pointer; color:white; background:var(--primary); margin:8px 8px 8px 0; }
+    .nav a, .nav-link { display:block; text-decoration:none; color:#1d4ed8; background:#eaf1ff; border:1px solid #c7d8ff; border-radius:14px; padding:12px 14px; font-weight:800; }
+    .admin-box { margin-top:22px; padding:14px; border:1px dashed var(--border); border-radius:16px; background:#f8fafc; }
+    .admin-box summary { cursor:pointer; font-weight:900; color:#334155; }
+    .admin-links { display:grid; gap:8px; margin-top:12px; }
+    .admin-links a { color:#1d4ed8; font-weight:800; text-decoration:none; }
+    .hero { background:var(--panel); border:1px solid var(--border); border-radius:28px; padding:28px; box-shadow:0 18px 45px rgba(15,23,42,.07); margin-bottom:18px; }
+    .hero-grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr); gap:20px; align-items:start; }
+    .steps { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-top:18px; }
+    .step { border:1px solid var(--border); border-radius:16px; padding:14px; background:#f8fafc; }
+    .step b { display:block; color:#0f172a; }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:20px; box-shadow:0 14px 35px rgba(15,23,42,.06); margin:0 0 18px; }
+    .two { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr); gap:18px; }
+    label { display:block; margin:12px 0 5px; font-weight:800; }
+    textarea,select,input { width:100%; border:1px solid var(--border); border-radius:14px; padding:12px 13px; font:inherit; background:#fff; }
+    textarea { min-height:112px; resize:vertical; }
+    button { border:0; border-radius:14px; padding:12px 16px; font:inherit; font-weight:900; cursor:pointer; color:white; background:var(--primary); margin:8px 8px 8px 0; }
     button.secondary { color:#0f172a; background:#e8eef8; }
+    button.teal { background:var(--primary2); }
     button:disabled { opacity:.55; cursor:not-allowed; }
-    pre { white-space:pre-wrap; background:#0f172a; color:#e5eefc; border-radius:14px; padding:14px; min-height:90px; overflow:auto; }
+    .example-row { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 6px; }
+    .example-row button { margin:0; padding:8px 10px; font-size:14px; background:#eaf1ff; color:#1d4ed8; }
+    pre { white-space:pre-wrap; background:#0f172a; color:#e5eefc; border-radius:16px; padding:15px; min-height:90px; overflow:auto; }
     .ok { color:var(--good); font-weight:800; }
     .warn { color:var(--warn); font-weight:800; }
     .note { background:#eef6ff; border:1px solid #bfdbfe; color:#1e3a8a; border-radius:14px; padding:12px; }
     .silent-status { margin-top:10px; font-size:14px; color:var(--muted); }
     audio { width:100%; margin-top:12px; }
-    @media (max-width:1000px){ .layout{grid-template-columns:1fr}.two{grid-template-columns:1fr} aside{border-right:0;border-bottom:1px solid var(--border)} main{padding:18px} }
+    .cta-row { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+    .cta-row a { text-decoration:none; color:white; background:var(--primary); border-radius:14px; padding:12px 16px; font-weight:900; }
+    .cta-row a.secondary { color:#0f172a; background:#e8eef8; }
+    @media (max-width:1050px){ .layout{grid-template-columns:1fr}.two,.hero-grid,.steps{grid-template-columns:1fr} aside{border-right:0;border-bottom:1px solid var(--border)} main{padding:18px} }
   </style>
 </head>
 <body>
   <div class="layout">
     <aside>
-      <img class="logo" src="/assets/prague-ai-voice-logo.svg?v=216" alt="Prague AI Voice" />
+      <img class="logo" src="/assets/prague-ai-voice-logo.svg?v=240" alt="Prague AI Voice" />
       <h1>Prague AI Voice</h1>
-      <p>Česká administrace <span class="version" id="versionSide">2.1.6</span></p>
+      <p>Český hlasový asistent <span class="version">2.4.0</span></p>
       <div class="nav">
-        <a href="/booking" target="_blank" rel="noreferrer">Veřejná rezervace</a>
-        <a href="/admin/clients" target="_blank" rel="noreferrer">Správa klientů</a>
-        <a href="/onboarding" target="_blank" rel="noreferrer">Přidat klienta</a>
-        <a href="/weaknesses" target="_blank" rel="noreferrer">Test slabin</a>
-        <a href="/website-import" target="_blank" rel="noreferrer">Import z webu</a>
+        <a href="/booking" target="_blank" rel="noreferrer">Vyzkoušet veřejnou rezervaci</a>
+        <a href="#demoAgent">Test asistenta</a>
+        <a href="#demoVoice">Test českého hlasu</a>
       </div>
-      <p class="note"><b>Český hlas:</b><br>Používá se serverový Microsoft edge-tts MP3 hlas. Browser hlas je vypnutý.</p>
+      <p class="note"><b>Bez LLM nákladů:</b><br>Demo používá pravidla, FAQ, synonymní fráze a český serverový MP3 hlas. Browser hlas je vypnutý.</p>
+      <details class="admin-box">
+        <summary>Admin nástroje</summary>
+        <div class="admin-links">
+          <a href="/admin/clients" target="_blank" rel="noreferrer">Správa klientů</a>
+          <a href="/onboarding" target="_blank" rel="noreferrer">Přidat klienta</a>
+          <a href="/weaknesses" target="_blank" rel="noreferrer">Test slabin</a>
+          <a href="/unknown-questions" target="_blank" rel="noreferrer">Nezodpovězené dotazy → FAQ</a>
+          <a href="/website-import" target="_blank" rel="noreferrer">Import z webu</a>
+        </div>
+      </details>
     </aside>
 
     <main>
-      <h2>Ovládací panel <span class="version" id="versionTop">2.1.6</span></h2>
-      <p>Jednoduchý demo panel pro agenta, český hlas, aktivní profil a rezervace. Technická diagnostika a systémový výpis nejsou v uživatelském rozhraní zobrazené.</p>
+      <section class="hero">
+        <div class="hero-grid">
+          <div>
+            <h2>Demo českého AI recepčního pro rezervace</h2>
+            <p>Otestujte, jak může malá firma odpovídat na časté otázky, ceny, otevírací dobu, adresu a rezervace bez placeného LLM. Neznámé otázky se později doplní do FAQ.</p>
+            <div class="cta-row">
+              <a href="#demoAgent">Začít test</a>
+              <a class="secondary" href="/booking" target="_blank" rel="noreferrer">Otevřít rezervaci</a>
+            </div>
+          </div>
+          <div class="panel" style="margin:0">
+            <h3>Aktivní profil</h3>
+            <div id="profileBox">načítám profil...</div>
+          </div>
+        </div>
+        <div class="steps">
+          <div class="step"><b>1. Dotaz</b><span>Zákazník se zeptá česky.</span></div>
+          <div class="step"><b>2. Odpověď</b><span>Lokální pravidla najdou odpověď.</span></div>
+          <div class="step"><b>3. Hlas</b><span>Odpověď přečte český MP3 hlas.</span></div>
+          <div class="step"><b>4. Učení</b><span>Neznámé dotazy jdou do FAQ.</span></div>
+        </div>
+      </section>
 
       <section class="two">
-        <div class="panel">
+        <div id="demoAgent" class="panel">
+          <h2>Rychlý test asistenta</h2>
+          <p>Jedno pitanje po řádku. Pokud zadáte více řádků, agent odpoví na každý zvlášť.</p>
+          <label for="textInput">Zpráva zákazníka</label>
+          <textarea id="textInput">Dobrý den, kdy máte otevřeno?</textarea>
+          <div class="example-row">
+            <button type="button" data-example="Kolik stojí obočí?">Cena</button>
+            <button type="button" data-example="Jak dlouho trvá masáž?">Délka</button>
+            <button type="button" data-example="Kde vás najdu?">Adresa</button>
+            <button type="button" data-example="Máte zítra volno?">Rezervace</button>
+          </div>
+          <button id="sendAiBtn">Odeslat lokálnímu agentovi</button>
+          <button id="speakAnswerBtn" class="secondary" disabled>Přehrát odpověď českým hlasem</button>
+          <pre id="assistantOutput"></pre>
+        </div>
+
+        <div id="demoVoice" class="panel">
           <h2>Český neuralní hlas</h2>
           <p>Test používá pouze serverový MP3 hlas <b>cs-CZ-VlastaNeural</b>.</p>
           <label for="voiceSelect">Hlas</label>
@@ -67,37 +128,21 @@
           </select>
           <label for="ttsText">Text</label>
           <textarea id="ttsText">Dobrý den, dovolali jste se do Studia Aurora Praha. Jak vám mohu pomoci?</textarea>
-          <button id="testVoiceBtn">Přehrát český hlas</button>
+          <button id="testVoiceBtn" class="teal">Přehrát český hlas</button>
           <audio id="audioPlayer" controls></audio>
           <div id="ttsMessage" class="silent-status"></div>
         </div>
-
-        <div class="panel">
-          <h2>Aktivní profil</h2>
-          <div id="profileBox">načítám profil...</div>
-        </div>
-      </section>
-
-      <section class="panel">
-        <h2>Rychlý test agenta</h2>
-        <label for="textInput">Zpráva zákazníka</label>
-        <textarea id="textInput">Dobrý den, kdy máte otevřeno?</textarea>
-        <button id="sendAiBtn">Odeslat lokálnímu agentovi</button>
-        <button id="speakAnswerBtn" class="secondary" disabled>Přehrát odpověď českým hlasem</button>
-        <pre id="assistantOutput"></pre>
       </section>
 
       <section class="panel">
         <h2>Rezervace</h2>
-        <p>Pro správu a export rezervací použijte samostatnou stránku pro správu klientů.</p>
-        <a class="nav-link" href="/admin/clients" target="_blank" rel="noreferrer">Otevřít správu klientů</a>
+        <p>Pro zákaznický scénář otevřete veřejnou rezervaci. Pro admin správu použijte správu klientů.</p>
+        <a class="nav-link" href="/booking" target="_blank" rel="noreferrer">Otevřít veřejnou rezervaci</a>
       </section>
     </main>
   </div>
 
   <script>
-    const versionTop = document.getElementById('versionTop');
-    const versionSide = document.getElementById('versionSide');
     const profileBox = document.getElementById('profileBox');
     const ttsMessage = document.getElementById('ttsMessage');
     const audioPlayer = document.getElementById('audioPlayer');
@@ -113,17 +158,6 @@
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || data.error || res.statusText);
       return data;
-    }
-
-    async function loadVersion() {
-      try {
-        const data = await jsonFetch('/api/system/status');
-        versionTop.textContent = data.version || '2.1.6';
-        versionSide.textContent = data.version || '2.1.6';
-      } catch {
-        versionTop.textContent = '2.1.6';
-        versionSide.textContent = '2.1.6';
-      }
     }
 
     async function loadProfile() {
@@ -177,7 +211,13 @@
       catch (error) { ttsMessage.textContent = 'Chyba českého hlasu: ' + error.message; }
     };
 
-    loadVersion();
+    document.querySelectorAll('[data-example]').forEach((button) => {
+      button.addEventListener('click', () => {
+        textInput.value = button.getAttribute('data-example') || '';
+        textInput.focus();
+      });
+    });
+
     loadProfile();
   </script>
 </body>

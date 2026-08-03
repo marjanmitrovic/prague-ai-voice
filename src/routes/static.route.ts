@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
 const publicDir = path.resolve(process.cwd(), 'public');
-const APP_VERSION = '2.5.0';
+const APP_VERSION = '2.5.1';
 
 const contentTypes: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -31,6 +31,16 @@ function safePublicPath(relativePath: string): string | null {
 function applyRuntimeHtmlFixes(relativePath: string, file: Buffer): Buffer {
   if (relativePath !== 'index.html') return file;
 
+  const demoScenarioScript = `
+    const storedDemoQuestions = sessionStorage.getItem('pragueAiVoiceDemoQuestions');
+    if (storedDemoQuestions) {
+      textInput.value = storedDemoQuestions;
+      sessionStorage.removeItem('pragueAiVoiceDemoQuestions');
+      setTimeout(() => document.getElementById('demoAgent')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+    }
+
+    loadProfile();`;
+
   const html = file.toString('utf8')
     .replace(/2\.1\.4/g, APP_VERSION)
     .replace(/2\.1\.5/g, APP_VERSION)
@@ -40,8 +50,11 @@ function applyRuntimeHtmlFixes(relativePath: string, file: Buffer): Buffer {
     .replace(/2\.3\.0/g, APP_VERSION)
     .replace(/2\.3\.1/g, APP_VERSION)
     .replace(/2\.4\.0/g, APP_VERSION)
+    .replace(/2\.5\.0/g, APP_VERSION)
+    .replace(/Jedno pitanje po řádku\./g, 'Jedna otázka na řádek.')
     .replace(/<a href="#demoVoice">Test českého hlasu<\/a>/g, '<a href="#demoVoice">Test českého hlasu</a>\n        <a href="/demo-scenarios" target="_blank" rel="noreferrer">Demo scénáře</a>')
-    .replace(/<a href="\/website-import" target="_blank" rel="noreferrer">Import z webu<\/a>/g, '<a href="/website-import" target="_blank" rel="noreferrer">Import z webu</a>\n          <a href="/demo-scenarios" target="_blank" rel="noreferrer">Demo scénáře</a>');
+    .replace(/<a href="\/website-import" target="_blank" rel="noreferrer">Import z webu<\/a>/g, '<a href="/website-import" target="_blank" rel="noreferrer">Import z webu</a>\n          <a href="/demo-scenarios" target="_blank" rel="noreferrer">Demo scénáře</a>')
+    .replace(/\n\s*loadProfile\(\);\s*\n\s*<\/script>/, `${demoScenarioScript}\n  </script>`);
 
   return Buffer.from(html, 'utf8');
 }

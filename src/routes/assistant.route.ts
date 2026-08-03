@@ -82,7 +82,11 @@ export async function assistantRoute(app: FastifyInstance): Promise<void> {
       results.push({ question, ...result });
     }
 
-    const primary = results[0];
+    const primary = results.at(0);
+    if (!primary) {
+      return reply.code(400).send({ error: 'invalid_request', message: 'Nebyla zadána žádná otázka.' });
+    }
+
     const text = results.length === 1
       ? primary.text
       : results.map((item, index) => `${index + 1}. ${item.question}\n${item.text}`).join('\n\n');

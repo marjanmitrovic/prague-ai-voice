@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Demo scénáře — Prague AI Voice</title>
+  <style>
+    :root { --bg:#f4f7fb; --panel:#fff; --text:#122033; --muted:#64748b; --border:#dbe3ee; --primary:#2563eb; --good:#047857; --warn:#b45309; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter, Segoe UI, Arial, sans-serif; background:linear-gradient(180deg,#f8fbff,var(--bg)); color:var(--text); line-height:1.5; }
+    main { max-width:1180px; margin:0 auto; padding:28px; }
+    .topnav a { color:#1d4ed8; text-decoration:none; font-weight:900; margin-right:14px; }
+    .hero,.panel { background:var(--panel); border:1px solid var(--border); border-radius:22px; padding:20px; margin:0 0 18px; box-shadow:0 14px 35px rgba(15,23,42,.06); }
+    h1,h2,h3 { margin:0 0 10px; letter-spacing:-.02em; }
+    p { color:var(--muted); }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+    .scenario { border:1px solid var(--border); border-radius:18px; padding:16px; background:#fff; }
+    .tag { display:inline-flex; padding:3px 9px; border-radius:999px; background:#dcfce7; color:#047857; font-size:12px; font-weight:900; margin-bottom:8px; }
+    textarea { width:100%; min-height:145px; resize:vertical; border:1px solid var(--border); border-radius:14px; padding:12px; font:inherit; background:#f8fafc; }
+    button { border:0; border-radius:14px; padding:10px 13px; font:inherit; font-weight:900; cursor:pointer; color:white; background:var(--primary); margin:8px 8px 0 0; }
+    button.secondary { background:#e8eef8; color:#0f172a; }
+    .hint { color:var(--muted); font-size:14px; }
+    .flow { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+    .step { border:1px solid var(--border); background:#f8fafc; border-radius:16px; padding:13px; }
+    .step b { display:block; }
+    @media (max-width:850px){ main{padding:16px}.grid,.flow{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="topnav">
+      <a href="/">Ovládací panel</a>
+      <a href="/booking" target="_blank" rel="noreferrer">Veřejná rezervace</a>
+      <a href="/unknown-questions" target="_blank" rel="noreferrer">Nezodpovězené dotazy</a>
+    </div>
+
+    <section class="hero">
+      <h1>Oborové demo scénáře</h1>
+      <p>Hotové české otázky pro rychlou prezentaci klientovi. Každý blok lze zkopírovat do hlavního testu asistenta. Agent odpovídá po řádcích: jeden řádek = jedna otázka.</p>
+      <div class="flow">
+        <div class="step"><b>1. Vyberte obor</b><span>Salon, barber, restaurace, ordinace nebo servis.</span></div>
+        <div class="step"><b>2. Zkopírujte otázky</b><span>Použijte reálný zákaznický scénář.</span></div>
+        <div class="step"><b>3. Otestujte hlas</b><span>Odpověď přehrajte českým hlasem.</span></div>
+        <div class="step"><b>4. Doplňte FAQ</b><span>Neznámé dotazy se učí přes admin.</span></div>
+      </div>
+    </section>
+
+    <section class="grid" id="scenarios"></section>
+  </main>
+
+  <script>
+    const scenarios = [
+      {
+        title: 'Kosmetický salon', tag: 'Salon / beauty',
+        text: 'Dobrý den, kdy máte otevřeno?\nKolik stojí úprava obočí?\nJak dlouho trvá základní kosmetické ošetření?\nKde vás najdu?\nMáte zítra volný termín?\nDá se platit kartou?\nMohu koupit dárkový poukaz?'
+      },
+      {
+        title: 'Barber shop', tag: 'Barber / kadeřnictví',
+        text: 'Kolik stojí pánský střih?\nJak dlouho trvá střih a vousy?\nMáte dnes volno po práci?\nKde přesně jste?\nBerete nové zákazníky?\nDá se objednat online?\nMůžu přijít bez rezervace?'
+      },
+      {
+        title: 'Restaurace', tag: 'Restaurace / bistro',
+        text: 'Máte dnes otevřeno?\nDá se rezervovat stůl pro čtyři osoby?\nKde vás najdu?\nMáte polední menu?\nDěláte rozvoz?\nMáte bezlepkové jídlo?\nJe možné platit kartou?'
+      },
+      {
+        title: 'Soukromá ordinace', tag: 'Ordinace / klinika',
+        text: 'Kdy máte volný termín?\nKolik stojí vstupní konzultace?\nJak dlouho vyšetření trvá?\nKde ordinace sídlí?\nCo si mám vzít s sebou?\nBerete nové pacienty?\nMohu termín změnit?'
+      },
+      {
+        title: 'Autoservis', tag: 'Servis / opravy',
+        text: 'Kolik stojí základní diagnostika?\nMůžu přijet zítra ráno?\nJak dlouho trvá výměna oleje?\nKde se servis nachází?\nDěláte pneuservis?\nMůžu počkat na místě?\nMáte volný termín tento týden?'
+      },
+      {
+        title: 'Realitní kancelář', tag: 'Reality / služby',
+        text: 'Kdy vás můžu kontaktovat?\nKde máte kancelář?\nKolik stojí odhad nemovitosti?\nMohu si domluvit prohlídku?\nJak dlouho trvá příprava smlouvy?\nPomáháte s pronájmem bytu?\nJaké dokumenty potřebuji?'
+      }
+    ];
+
+    const box = document.getElementById('scenarios');
+    box.innerHTML = scenarios.map((item, index) => `
+      <article class="scenario">
+        <span class="tag">${item.tag}</span>
+        <h2>${item.title}</h2>
+        <p class="hint">Ukázkové otázky zákazníka pro tento obor.</p>
+        <textarea id="scenario-${index}" readonly>${item.text}</textarea>
+        <button type="button" data-copy="scenario-${index}">Kopírovat otázky</button>
+        <button type="button" class="secondary" data-open="scenario-${index}">Otevřít hlavní demo</button>
+      </article>
+    `).join('');
+
+    document.querySelectorAll('[data-copy]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const textarea = document.getElementById(button.dataset.copy);
+        await navigator.clipboard.writeText(textarea.value);
+        button.textContent = 'Zkopírováno';
+        setTimeout(() => { button.textContent = 'Kopírovat otázky'; }, 1200);
+      });
+    });
+
+    document.querySelectorAll('[data-open]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const textarea = document.getElementById(button.dataset.open);
+        sessionStorage.setItem('pragueAiVoiceDemoQuestions', textarea.value);
+        window.location.href = '/#demoAgent';
+      });
+    });
+  </script>
+</body>
+</html>

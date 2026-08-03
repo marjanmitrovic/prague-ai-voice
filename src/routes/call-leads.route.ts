@@ -4,6 +4,7 @@ import pg from 'pg';
 import { z } from 'zod';
 import { requireAdmin } from '../auth.js';
 import { env } from '../config/env.js';
+import { sendCallLeadEmail } from '../email/call-lead-email.js';
 import { DEFAULT_BUSINESS_SLUG, safeBusinessSlug } from '../storage-postgres.js';
 
 const { Pool } = pg;
@@ -87,6 +88,28 @@ function publicLead(row: CallLeadRow) {
   };
 }
 
+async function notifyLead(row: CallLeadRow) {
+  try {
+    return await sendCallLeadEmail({
+      id: row.id,
+      businessSlug: row.business_slug,
+      status: row.status,
+      customerName: row.customer_name,
+      customerPhone: row.customer_phone,
+      serviceName: row.service_name,
+      message: row.message,
+      source: row.source,
+      createdAt: row.created_at,
+    });
+  } catch (error) {
+    return {
+      sent: false,
+      skipped: false,
+      reason: error instanceof Error ? error.message : 'email_failed',
+    };
+  }
+}
+
 export async function callLeadsRoute(app: FastifyInstance): Promise<void> {
   app.get('/api/call-leads', async (request, reply) => {
     if (!(await requireAdmin(request, reply))) return;
@@ -130,7 +153,8 @@ export async function callLeadsRoute(app: FastifyInstance): Promise<void> {
     const selectedPool = await ensureCallLeadTable();
     if (!selectedPool) {
       memoryLeads = [row, ...memoryLeads].slice(0, 300);
-      return reply.code(201).send({ ok: true, storage: 'memory', lead: publicLead(row) });
+      const notification = await notifyLead(row);
+      return reply.code(201).send({ ok: true, storage: 'memory', lead: publicLead(row), notification });
     }
 
     await selectedPool.query(
@@ -140,7 +164,8 @@ export async function callLeadsRoute(app: FastifyInstance): Promise<void> {
       [row.id, row.business_slug, row.status, row.customer_name, row.customer_phone, row.service_name, row.message, row.source, row.created_at, row.updated_at],
     );
 
-    return reply.code(201).send({ ok: true, storage: 'postgres', lead: publicLead(row) });
+    const notification = await notifyLead(row);
+    return reply.code(201).send({ ok: true, storage: 'postgres', lead: publicLead(row), notification });
   });
 
   app.patch('/api/call-leads/:id', async (request, reply) => {

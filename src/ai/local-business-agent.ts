@@ -6,7 +6,7 @@ export type LocalAgentResult = {
   model: string;
   intent: string;
   confidence: number;
-  matchedSource?: 'rules' | 'faq' | 'service' | 'fallback';
+  matchedSource?: 'rules' | 'faq' | 'service' | 'fallback' | 'synonyms';
   weakness?: string;
 };
 
@@ -16,7 +16,7 @@ export type WeaknessTestResult = LocalAgentResult & {
   recommendation: string;
 };
 
-const MODEL_NAME = 'local-business-profile-rules-no-llm-v2';
+const MODEL_NAME = 'local-business-profile-rules-no-llm-v3-synonyms';
 
 const normalize = (input: string): string =>
   input
@@ -27,7 +27,51 @@ const normalize = (input: string): string =>
     .replace(/\s+/g, ' ')
     .trim();
 
-const containsAny = (text: string, terms: string[]) => terms.some((term) => text.includes(normalize(term)));
+const PHRASES = {
+  openingHours: [
+    'otevreno', 'oteviraci', 'otviraci', 'oteviracka', 'kdy mate', 'kdy je otevreno', 'hodiny',
+    'pracovni doba', 'provozni doba', 'doba', 'v kolik', 'do kolika', 'od kolika', 'mate dnes otevreno',
+    'jste dnes otevreni', 'kdy zavirate', 'kdy otvirate', 'vikend', 'sobota', 'nedele'
+  ],
+  price: [
+    'cena', 'ceny', 'cenik', 'kolik', 'kolik stoji', 'stoji', 'za kolik', 'korun', 'kc', 'czk',
+    'platba', 'zaplatim', 'cena za', 'kolik me to bude stat', 'jak drahe', 'drahe', 'levne',
+    'tarif', 'poplatek', 'castka'
+  ],
+  services: [
+    'sluzby', 'sluzba', 'nabizite', 'nabidka', 'co delate', 'co umite', 'co poskytujete',
+    'osetreni', 'zakroky', 'procedury', 'moznosti', 'mate v nabidce', 'seznam sluzeb'
+  ],
+  booking: [
+    'rezervace', 'rezervovat', 'zarezervovat', 'objednat', 'objednani', 'termin', 'volny termin',
+    'volno', 'mate volno', 'chci prijit', 'muzu prijit', 'objednavka', 'schuzka', 'slot', 'cas',
+    'dnes', 'zitra', 'pozitri', 'pristi tyden'
+  ],
+  human: [
+    'clovek', 'pracovnik', 'operator', 'recepce', 'spojit', 'prepojit', 'zivy asistent', 'zamestnanec',
+    'majitel', 'mluvit s nekym', 'kontaktovat cloveka'
+  ],
+  address: [
+    'adresa', 'kde jste', 'kde vas najdu', 'kde sidlite', 'kam mam prijit', 'lokace', 'pobocka',
+    'misto', 'mapa', 'jak se k vam dostanu', 'kde to je'
+  ],
+  duration: [
+    'jak dlouho', 'doba trvani', 'trva', 'kolik minut', 'na jak dlouho', 'delka', 'delka sluzby',
+    'casove', 'jak dlouhe'
+  ],
+  greeting: [
+    'dobry den', 'ahoj', 'zdravim', 'dobry vecer', 'nazdar', 'hello', 'hi'
+  ]
+} as const;
+
+type PhraseIntent = keyof typeof PHRASES;
+
+const containsAny = (text: string, terms: readonly string[]) => terms.some((term) => text.includes(normalize(term)));
+
+function detectIntent(text: string): PhraseIntent | null {
+  const priority: PhraseIntent[] = ['price', 'openingHours', 'booking', 'duration', 'address', 'services', 'human', 'greeting'];
+  return priority.find((intent) => containsAny(text, PHRASES[intent])) ?? null;
+}
 
 function tokenSet(text: string): Set<string> {
   return new Set(normalize(text).split(' ').filter((token) => token.length >= 4));
@@ -59,7 +103,13 @@ function formatAllPrices(profile: BusinessProfile): string {
 
 function serviceAliases(service: BusinessService, profile: BusinessProfile): string[] {
   const configured = profile.vocabulary?.serviceAliases?.[service.name] ?? [];
-  return [service.name, service.description, ...configured];
+  const generated = [
+    service.name,
+    service.description,
+    ...service.name.split(/\s+/),
+    ...service.description.split(/\s+/),
+  ];
+  return [...generated, ...configured].filter((item) => normalize(item).length >= 3);
 }
 
 function findServiceQuestion(text: string, profile: BusinessProfile) {
@@ -85,6 +135,96 @@ function findFaqAnswer(input: string, profile: BusinessProfile) {
 
   if (!best || best.score < 0.38) return null;
   return { ...best.item, score: best.score };
+}
+
+function answerByDetectedIntent(intent: PhraseIntent, text: string, profile: BusinessProfile): LocalAgentResult | null {
+  const matchingService = findServiceQuestion(text, profile);
+
+  if (intent === 'openingHours') {
+    return {
+      intent: 'opening_hours',
+      confidence: 0.95,
+      model: MODEL_NAME,
+      matchedSource: 'synonyms',
+      text: formatOpeningHours(profile),
+    };
+  }
+
+  if (intent === 'price') {
+    return {
+      intent: matchingService ? 'service_price' : 'price_list',
+      confidence: matchingService ? 0.95 : 0.88,
+      model: MODEL_NAME,
+      matchedSource: matchingService ? 'service' : 'synonyms',
+      text: matchingService
+        ? `${matchingService.name} stojí ${matchingService.spokenPrice}. Délka služby je ${matchingService.duration}.`
+        : formatAllPrices(profile),
+    };
+  }
+
+  if (intent === 'services') {
+    return {
+      intent: 'services',
+      confidence: 0.93,
+      model: MODEL_NAME,
+      matchedSource: 'synonyms',
+      text: formatServices(profile),
+    };
+  }
+
+  if (intent === 'duration') {
+    return {
+      intent: matchingService ? 'service_duration' : 'duration_list',
+      confidence: matchingService ? 0.92 : 0.82,
+      model: MODEL_NAME,
+      matchedSource: matchingService ? 'service' : 'synonyms',
+      text: matchingService
+        ? `${matchingService.name} trvá ${matchingService.duration}. Cena je ${matchingService.spokenPrice}.`
+        : profile.services.map((service) => `${service.name} trvá ${service.duration}`).join('. ') + '.',
+    };
+  }
+
+  if (intent === 'address') {
+    return {
+      intent: 'address',
+      confidence: 0.93,
+      model: MODEL_NAME,
+      matchedSource: 'synonyms',
+      text: `Najdete nás na adrese: ${profile.address}.`,
+    };
+  }
+
+  if (intent === 'booking') {
+    return {
+      intent: 'booking_help',
+      confidence: 0.9,
+      model: MODEL_NAME,
+      matchedSource: 'synonyms',
+      text: profile.messages.bookingNotAvailable,
+    };
+  }
+
+  if (intent === 'human') {
+    return {
+      intent: 'human_transfer_not_available_yet',
+      confidence: 0.9,
+      model: MODEL_NAME,
+      matchedSource: 'synonyms',
+      text: profile.messages.humanTransferNotAvailable,
+    };
+  }
+
+  if (intent === 'greeting') {
+    return {
+      intent: 'greeting',
+      confidence: 0.74,
+      model: MODEL_NAME,
+      matchedSource: 'synonyms',
+      text: `Dobrý den, jsem virtuální asistent pro ${profile.companyName}. Mohu odpovědět na služby, ceny, otevírací dobu, adresu a rezervace.`,
+    };
+  }
+
+  return null;
 }
 
 export function createLocalAssistantText(input: string, businessSlug = DEFAULT_BUSINESS_SLUG): LocalAgentResult {
@@ -122,37 +262,10 @@ export function createLocalAssistantText(input: string, businessSlug = DEFAULT_B
     };
   }
 
-  if (containsAny(text, ['otevreno', 'oteviraci', 'otviraci', 'kdy mate', 'hodiny', 'pracovni doba', 'doba'])) {
-    return {
-      intent: 'opening_hours',
-      confidence: 0.95,
-      model: MODEL_NAME,
-      matchedSource: 'rules',
-      text: formatOpeningHours(profile),
-    };
-  }
-
-  if (containsAny(text, ['cena', 'kolik', 'stoji', 'korun', 'cenik', 'zaplatim']) || /(^|\s)kc($|\s)/.test(text)) {
-    const matchingService = findServiceQuestion(text, profile);
-    return {
-      intent: matchingService ? 'service_price' : 'price_list',
-      confidence: matchingService ? 0.95 : 0.88,
-      model: MODEL_NAME,
-      matchedSource: matchingService ? 'service' : 'rules',
-      text: matchingService
-        ? `${matchingService.name} stojí ${matchingService.spokenPrice}. Délka služby je ${matchingService.duration}.`
-        : formatAllPrices(profile),
-    };
-  }
-
-  if (containsAny(text, ['sluzby', 'nabizite', 'nabidka', 'osetreni', 'oboci', 'masaz', 'co delate'])) {
-    return {
-      intent: 'services',
-      confidence: 0.93,
-      model: MODEL_NAME,
-      matchedSource: 'rules',
-      text: formatServices(profile),
-    };
+  const detectedIntent = detectIntent(text);
+  if (detectedIntent) {
+    const answer = answerByDetectedIntent(detectedIntent, text, profile);
+    if (answer) return answer;
   }
 
   const matchingService = findServiceQuestion(text, profile);
@@ -163,26 +276,6 @@ export function createLocalAssistantText(input: string, businessSlug = DEFAULT_B
       model: MODEL_NAME,
       matchedSource: 'service',
       text: `${matchingService.name}: ${matchingService.description} Cena je ${matchingService.spokenPrice} a délka služby je ${matchingService.duration}.`,
-    };
-  }
-
-  if (containsAny(text, ['rezervace', 'termin', 'objednat', 'objednani', 'volny termin', 'zarezervovat', 'rezervovat'])) {
-    return {
-      intent: 'booking_help',
-      confidence: 0.9,
-      model: MODEL_NAME,
-      matchedSource: 'rules',
-      text: profile.messages.bookingNotAvailable,
-    };
-  }
-
-  if (containsAny(text, ['clovek', 'pracovnik', 'operator', 'recepce', 'spojit', 'prepojit'])) {
-    return {
-      intent: 'human_transfer_not_available_yet',
-      confidence: 0.9,
-      model: MODEL_NAME,
-      matchedSource: 'rules',
-      text: profile.messages.humanTransferNotAvailable,
     };
   }
 

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Telefonní napojení — Prague AI Voice</title>
+  <style>
+    :root { --bg:#f4f7fb; --panel:#fff; --text:#122033; --muted:#64748b; --border:#dbe3ee; --primary:#2563eb; --primary2:#0891b2; --good:#047857; --warn:#b45309; --danger:#b91c1c; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter, Segoe UI, Arial, sans-serif; color:var(--text); background:radial-gradient(circle at 10% 0%, rgba(8,145,178,.16), transparent 28rem), linear-gradient(180deg,#f8fbff,var(--bg)); line-height:1.5; }
+    main { max-width:1180px; margin:0 auto; padding:28px; }
+    .topnav a { color:#1d4ed8; text-decoration:none; font-weight:900; margin-right:14px; }
+    .hero,.panel { background:var(--panel); border:1px solid var(--border); border-radius:24px; padding:22px; margin:0 0 18px; box-shadow:0 14px 35px rgba(15,23,42,.06); }
+    h1,h2,h3 { margin:0 0 10px; letter-spacing:-.02em; }
+    p { color:var(--muted); }
+    .badge { display:inline-flex; padding:4px 10px; border-radius:999px; background:#dcfce7; color:#047857; font-weight:900; font-size:13px; }
+    .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+    .two { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr); gap:16px; }
+    .card { border:1px solid var(--border); border-radius:18px; padding:16px; background:#fff; }
+    .card.recommended { border-color:#86efac; background:#f0fdf4; }
+    .card strong { display:block; color:#0f172a; font-size:18px; margin-bottom:6px; }
+    .flow { display:grid; gap:12px; margin-top:14px; }
+    .flow-row { display:grid; grid-template-columns:44px minmax(0,1fr); gap:12px; align-items:start; border:1px solid var(--border); background:#f8fafc; border-radius:16px; padding:13px; }
+    .num { width:34px; height:34px; border-radius:999px; display:grid; place-items:center; color:#fff; background:var(--primary); font-weight:900; }
+    label { display:block; font-weight:900; margin:10px 0 5px; }
+    input,select,textarea { width:100%; border:1px solid var(--border); border-radius:14px; padding:11px 12px; font:inherit; background:#fff; }
+    textarea { min-height:112px; resize:vertical; }
+    button, .btn { border:0; border-radius:14px; padding:11px 15px; font:inherit; font-weight:900; color:#fff; background:var(--primary); cursor:pointer; margin:8px 8px 0 0; text-decoration:none; display:inline-flex; }
+    button.secondary, .btn.secondary { color:#0f172a; background:#e8eef8; }
+    pre { white-space:pre-wrap; background:#0f172a; color:#e5eefc; border-radius:16px; padding:15px; min-height:110px; overflow:auto; }
+    .note { background:#eef6ff; border:1px solid #bfdbfe; color:#1e3a8a; border-radius:16px; padding:14px; }
+    .warning { background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; border-radius:16px; padding:14px; }
+    @media (max-width:900px){ main{padding:16px}.grid,.two{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="topnav">
+      <a href="/">Ovládací panel</a>
+      <a href="/sales-presentation">Prodejní prezentace</a>
+      <a href="/booking" target="_blank" rel="noreferrer">Veřejná rezervace</a>
+    </div>
+
+    <section class="hero">
+      <span class="badge">2.7.0 — Telefonní napojení</span>
+      <h1>Jak se AI asistent připojí k telefonní lince</h1>
+      <p>Nejlepší první krok není měnit telefonní číslo. Klient si nechá svoje číslo a u operátora zapne přesměrování hovorů na AI asistenta — typicky jen pro zmeškané hovory nebo mimo pracovní dobu.</p>
+    </section>
+
+    <section class="grid">
+      <article class="card recommended">
+        <strong>1. Doporučeno: zmeškané hovory</strong>
+        <p>Když se nikdo nezvedne například do 15–25 sekund, hovor se přesměruje na AI asistenta.</p>
+        <p><b>Prodejní výhoda:</b> klient neriskuje změnu provozu a hned zachytí ztracené poptávky.</p>
+      </article>
+      <article class="card">
+        <strong>2. Mimo pracovní dobu</strong>
+        <p>Po zavírací době se hovor automaticky předá AI asistentovi, který odpoví, zapíše požadavek nebo nabídne rezervaci.</p>
+      </article>
+      <article class="card">
+        <strong>3. Plné SIP napojení</strong>
+        <p>Profesionální režim přes VoIP/SIP trunk. Vhodné až po ověření, že zákazníci asistenta opravdu používají.</p>
+      </article>
+    </section>
+
+    <section class="two">
+      <div class="panel">
+        <h2>Doporučený tok pro MVP</h2>
+        <div class="flow">
+          <div class="flow-row"><div class="num">1</div><div><b>Zákazník volá na běžné číslo firmy</b><br><span>Telefonní číslo zůstává stejné.</span></div></div>
+          <div class="flow-row"><div class="num">2</div><div><b>Majitel nezvedne telefon</b><br><span>Například po 20 sekundách nastoupí přesměrování.</span></div></div>
+          <div class="flow-row"><div class="num">3</div><div><b>Hovor převezme AI asistent</b><br><span>Česky pozdraví, zeptá se na službu, termín a kontakt.</span></div></div>
+          <div class="flow-row"><div class="num">4</div><div><b>Vznikne rezervace nebo zpráva</b><br><span>Výsledek se uloží v administraci a případně odešle e-mailem.</span></div></div>
+          <div class="flow-row"><div class="num">5</div><div><b>Neznámé otázky jdou do FAQ</b><br><span>Asistent se zlepšuje bez placeného LLM.</span></div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Simulace nastavení klienta</h2>
+        <label for="phoneNumber">Telefonní číslo firmy</label>
+        <input id="phoneNumber" value="+420 777 123 456" />
+        <label for="mode">Režim přesměrování</label>
+        <select id="mode">
+          <option value="missed">Zmeškané hovory po 20 sekundách</option>
+          <option value="afterhours">Pouze mimo pracovní dobu</option>
+          <option value="all">Všechny hovory přes AI asistenta</option>
+        </select>
+        <label for="aiNumber">AI číslo / SIP vstup</label>
+        <input id="aiNumber" value="+420 AI číslo nebo SIP trunk" />
+        <button id="generateBtn">Vygenerovat instrukce</button>
+        <pre id="output"></pre>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Co je potřeba technicky doplnit pro živé hovory</h2>
+      <div class="grid">
+        <div class="card"><strong>STT</strong><p>Převod hlasu zákazníka na text. Pro MVP může být nejdřív režim hlasové zprávy.</p></div>
+        <div class="card"><strong>Call gateway</strong><p>SIP/WebRTC/Asterisk/FreeSWITCH vrstva, která přijme hovor a pošle audio do aplikace.</p></div>
+        <div class="card"><strong>Call log</strong><p>Záznam hovoru, přepis, výsledek, rezervace a seznam otázek pro FAQ.</p></div>
+      </div>
+      <p class="warning"><b>Pro prodej:</b> neprodávat hned plné call centrum. Nejprve nabídnout jednoduché zachycení zmeškaných hovorů. To je pro malou firmu nejsrozumitelnější a nejméně riskantní.</p>
+      <a class="btn" href="/sales-presentation">Otevřít prodejní prezentaci</a>
+      <a class="btn secondary" href="/demo-scenarios">Demo scénáře</a>
+    </section>
+  </main>
+
+  <script>
+    const phoneNumber = document.getElementById('phoneNumber');
+    const aiNumber = document.getElementById('aiNumber');
+    const mode = document.getElementById('mode');
+    const output = document.getElementById('output');
+
+    function modeText(value) {
+      if (value === 'afterhours') return 'pouze mimo pracovní dobu';
+      if (value === 'all') return 'všechny hovory přes AI asistenta';
+      return 'zmeškané hovory po 20 sekundách';
+    }
+
+    document.getElementById('generateBtn').onclick = () => {
+      output.textContent = `Doporučené nastavení pro klienta:\n\nTelefonní číslo firmy: ${phoneNumber.value}\nRežim: ${modeText(mode.value)}\nPřesměrovat na: ${aiNumber.value}\n\nText pro operátora:\nProsím nastavte přesměrování hovorů z čísla ${phoneNumber.value} na ${aiNumber.value}. Režim: ${modeText(mode.value)}.\n\nPro MVP doporučujeme nejdříve jen zmeškané hovory, aby firma nepřišla o běžný způsob přijímání telefonátů.`;
+    };
+    document.getElementById('generateBtn').click();
+  </script>
+</body>
+</html>

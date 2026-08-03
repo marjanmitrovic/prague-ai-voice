@@ -1,9 +1,9 @@
 {
   "name": "prague-ai-voice",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "private": true,
   "type": "module",
-  "description": "Prague AI Voice - český edge-tts neuralní hlas bez browser fallback akcentu",
+  "description": "Prague AI Voice - český edge-tts neuralní hlas s opraveným rate argumentem",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",

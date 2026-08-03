@@ -57,6 +57,9 @@ export async function staticRoute(app: FastifyInstance): Promise<void> {
     return sendPublicFile(reply, `assets/${request.params['*']}`);
   });
 
+  app.get('/tts-test', async (_request, reply) => sendPublicFile(reply, 'tts-test.html'));
+  app.get('/admin/tts-test', async (_request, reply) => sendPublicFile(reply, 'tts-test.html'));
+
   app.get('/admin/website-import', async (_request, reply) => sendPublicFile(reply, 'website-import.html'));
   app.get('/website-import', async (_request, reply) => sendPublicFile(reply, 'website-import.html'));
 

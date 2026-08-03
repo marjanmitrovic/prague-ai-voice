@@ -16,7 +16,7 @@ export type WeaknessTestResult = LocalAgentResult & {
   recommendation: string;
 };
 
-const MODEL_NAME = 'local-business-profile-rules-no-llm-v3-synonyms';
+const MODEL_NAME = 'local-business-profile-rules-no-llm-v4-multi-question';
 
 const normalize = (input: string): string =>
   input
@@ -67,6 +67,14 @@ const PHRASES = {
 type PhraseIntent = keyof typeof PHRASES;
 
 const containsAny = (text: string, terms: readonly string[]) => terms.some((term) => text.includes(normalize(term)));
+
+function splitCustomerQuestions(input: string): string[] {
+  return input
+    .split(/\r?\n|(?<=[?!.])\s+(?=[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽa-záčďéěíňóřšťúůýž])/u)
+    .map((item) => item.trim())
+    .filter((item) => item.length >= 3)
+    .slice(0, 12);
+}
 
 function detectIntent(text: string): PhraseIntent | null {
   const priority: PhraseIntent[] = ['price', 'openingHours', 'booking', 'duration', 'address', 'services', 'human', 'greeting'];
@@ -141,13 +149,7 @@ function answerByDetectedIntent(intent: PhraseIntent, text: string, profile: Bus
   const matchingService = findServiceQuestion(text, profile);
 
   if (intent === 'openingHours') {
-    return {
-      intent: 'opening_hours',
-      confidence: 0.95,
-      model: MODEL_NAME,
-      matchedSource: 'synonyms',
-      text: formatOpeningHours(profile),
-    };
+    return { intent: 'opening_hours', confidence: 0.95, model: MODEL_NAME, matchedSource: 'synonyms', text: formatOpeningHours(profile) };
   }
 
   if (intent === 'price') {
@@ -156,20 +158,12 @@ function answerByDetectedIntent(intent: PhraseIntent, text: string, profile: Bus
       confidence: matchingService ? 0.95 : 0.88,
       model: MODEL_NAME,
       matchedSource: matchingService ? 'service' : 'synonyms',
-      text: matchingService
-        ? `${matchingService.name} stojí ${matchingService.spokenPrice}. Délka služby je ${matchingService.duration}.`
-        : formatAllPrices(profile),
+      text: matchingService ? `${matchingService.name} stojí ${matchingService.spokenPrice}. Délka služby je ${matchingService.duration}.` : formatAllPrices(profile),
     };
   }
 
   if (intent === 'services') {
-    return {
-      intent: 'services',
-      confidence: 0.93,
-      model: MODEL_NAME,
-      matchedSource: 'synonyms',
-      text: formatServices(profile),
-    };
+    return { intent: 'services', confidence: 0.93, model: MODEL_NAME, matchedSource: 'synonyms', text: formatServices(profile) };
   }
 
   if (intent === 'duration') {
@@ -178,88 +172,44 @@ function answerByDetectedIntent(intent: PhraseIntent, text: string, profile: Bus
       confidence: matchingService ? 0.92 : 0.82,
       model: MODEL_NAME,
       matchedSource: matchingService ? 'service' : 'synonyms',
-      text: matchingService
-        ? `${matchingService.name} trvá ${matchingService.duration}. Cena je ${matchingService.spokenPrice}.`
-        : profile.services.map((service) => `${service.name} trvá ${service.duration}`).join('. ') + '.',
+      text: matchingService ? `${matchingService.name} trvá ${matchingService.duration}. Cena je ${matchingService.spokenPrice}.` : profile.services.map((service) => `${service.name} trvá ${service.duration}`).join('. ') + '.',
     };
   }
 
   if (intent === 'address') {
-    return {
-      intent: 'address',
-      confidence: 0.93,
-      model: MODEL_NAME,
-      matchedSource: 'synonyms',
-      text: `Najdete nás na adrese: ${profile.address}.`,
-    };
+    return { intent: 'address', confidence: 0.93, model: MODEL_NAME, matchedSource: 'synonyms', text: `Najdete nás na adrese: ${profile.address}.` };
   }
 
   if (intent === 'booking') {
-    return {
-      intent: 'booking_help',
-      confidence: 0.9,
-      model: MODEL_NAME,
-      matchedSource: 'synonyms',
-      text: profile.messages.bookingNotAvailable,
-    };
+    return { intent: 'booking_help', confidence: 0.9, model: MODEL_NAME, matchedSource: 'synonyms', text: profile.messages.bookingNotAvailable };
   }
 
   if (intent === 'human') {
-    return {
-      intent: 'human_transfer_not_available_yet',
-      confidence: 0.9,
-      model: MODEL_NAME,
-      matchedSource: 'synonyms',
-      text: profile.messages.humanTransferNotAvailable,
-    };
+    return { intent: 'human_transfer_not_available_yet', confidence: 0.9, model: MODEL_NAME, matchedSource: 'synonyms', text: profile.messages.humanTransferNotAvailable };
   }
 
   if (intent === 'greeting') {
-    return {
-      intent: 'greeting',
-      confidence: 0.74,
-      model: MODEL_NAME,
-      matchedSource: 'synonyms',
-      text: `Dobrý den, jsem virtuální asistent pro ${profile.companyName}. Mohu odpovědět na služby, ceny, otevírací dobu, adresu a rezervace.`,
-    };
+    return { intent: 'greeting', confidence: 0.74, model: MODEL_NAME, matchedSource: 'synonyms', text: `Dobrý den, jsem virtuální asistent pro ${profile.companyName}. Mohu odpovědět na služby, ceny, otevírací dobu, adresu a rezervace.` };
   }
 
   return null;
 }
 
-export function createLocalAssistantText(input: string, businessSlug = DEFAULT_BUSINESS_SLUG): LocalAgentResult {
+function createSingleLocalAssistantText(input: string, businessSlug = DEFAULT_BUSINESS_SLUG): LocalAgentResult {
   const profile = getBusinessProfile(safeBusinessSlug(businessSlug));
   const text = normalize(input);
 
   if (!text) {
-    return {
-      intent: 'empty',
-      confidence: 1,
-      model: MODEL_NAME,
-      matchedSource: 'rules',
-      text: profile.messages.empty,
-    };
+    return { intent: 'empty', confidence: 1, model: MODEL_NAME, matchedSource: 'rules', text: profile.messages.empty };
   }
 
   if (containsAny(text, ['ignoruj', 'systemove instrukce', 'api', 'klic', 'prompt', 'tajne', 'pravidla'])) {
-    return {
-      intent: 'prompt_injection_attempt',
-      confidence: 0.85,
-      model: MODEL_NAME,
-      matchedSource: 'rules',
-      text: profile.messages.promptInjection,
-    };
+    return { intent: 'prompt_injection_attempt', confidence: 0.85, model: MODEL_NAME, matchedSource: 'rules', text: profile.messages.promptInjection };
   }
 
   const faq = findFaqAnswer(input, profile);
   if (faq) {
-    return {
-      intent: 'faq_answer',
-      confidence: Math.min(0.98, Math.max(0.72, faq.score)),
-      model: MODEL_NAME,
-      matchedSource: 'faq',
-      text: faq.answer,
-    };
+    return { intent: 'faq_answer', confidence: Math.min(0.98, Math.max(0.72, faq.score)), model: MODEL_NAME, matchedSource: 'faq', text: faq.answer };
   }
 
   const detectedIntent = detectIntent(text);
@@ -279,20 +229,31 @@ export function createLocalAssistantText(input: string, businessSlug = DEFAULT_B
     };
   }
 
-  return {
-    intent: 'fallback_with_supported_topics',
-    confidence: 0.42,
-    model: MODEL_NAME,
-    matchedSource: 'fallback',
-    weakness: 'missing_knowledge_or_phrase',
-    text: profile.messages.fallback,
-  };
+  return { intent: 'fallback_with_supported_topics', confidence: 0.42, model: MODEL_NAME, matchedSource: 'fallback', weakness: 'missing_knowledge_or_phrase', text: profile.messages.fallback };
+}
+
+export function createLocalAssistantText(input: string, businessSlug = DEFAULT_BUSINESS_SLUG): LocalAgentResult {
+  const parts = splitCustomerQuestions(input);
+
+  if (parts.length > 1) {
+    const answers = parts.map((question, index) => {
+      const result = createSingleLocalAssistantText(question, businessSlug);
+      return `${index + 1}. ${question}\n${result.text}`;
+    });
+    return {
+      intent: 'multi_question_answer',
+      confidence: Math.min(...parts.map((part) => createSingleLocalAssistantText(part, businessSlug).confidence)),
+      model: MODEL_NAME,
+      matchedSource: 'synonyms',
+      text: answers.join('\n\n'),
+    };
+  }
+
+  return createSingleLocalAssistantText(input, businessSlug);
 }
 
 function recommendationFor(result: LocalAgentResult, question: string): string {
-  if (result.intent === 'fallback_with_supported_topics') {
-    return `Doplnit FAQ odpověď nebo klíčová slova pro dotaz: „${question}“. `;
-  }
+  if (result.intent === 'fallback_with_supported_topics') return `Doplnit FAQ odpověď nebo klíčová slova pro dotaz: „${question}“. `;
   if (result.confidence < 0.7) return 'Zkontrolovat formulaci a případně přidat synonymum nebo FAQ.';
   return 'Bez okamžité úpravy.';
 }

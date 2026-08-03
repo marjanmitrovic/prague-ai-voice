@@ -104,6 +104,10 @@ function unknownQuestionId(question: string): string {
     .slice(0, 80) || `unknown-${Date.now()}`;
 }
 
+function normalizeKeywordList(input: string[]): string[] {
+  return [...new Set(input.map((item) => item.trim()).filter(Boolean))].slice(0, 20);
+}
+
 export function loadBusinessProfile(businessSlug = DEFAULT_BUSINESS_SLUG): BusinessProfile {
   const slug = safeBusinessSlug(businessSlug);
   const raw = readProfileJson(slug);
@@ -231,6 +235,46 @@ export async function recordUnknownQuestion(input: {
   const trimmed = nextUnknownQuestions.slice(0, 100);
   const saved = await saveBusinessProfile({ ...profile, unknownQuestions: trimmed }, slug);
   return saved.unknownQuestions;
+}
+
+export async function promoteUnknownQuestionToFaq(input: {
+  businessSlug?: string;
+  id: string;
+  answer: string;
+  keywords?: string[];
+}) {
+  const slug = safeBusinessSlug(input.businessSlug || DEFAULT_BUSINESS_SLUG);
+  const profile = getBusinessProfile(slug);
+  const target = profile.unknownQuestions.find((item) => item.id === input.id);
+  if (!target) throw new Error('Nezodpovězený dotaz nebyl nalezen.');
+
+  const answer = input.answer.trim();
+  if (!answer) throw new Error('Odpověď pro FAQ nesmí být prázdná.');
+
+  const faqItem = {
+    question: target.question,
+    answer,
+    keywords: normalizeKeywordList(input.keywords ?? []),
+  };
+
+  const targetKey = unknownQuestionId(target.question);
+  const existingFaqIndex = profile.knowledgeBase.findIndex((item) => unknownQuestionId(item.question) === targetKey);
+  const nextKnowledgeBase = existingFaqIndex >= 0
+    ? profile.knowledgeBase.map((item, index) => index === existingFaqIndex ? faqItem : item)
+    : [faqItem, ...profile.knowledgeBase];
+
+  const nextUnknownQuestions = profile.unknownQuestions.filter((item) => item.id !== input.id);
+  const saved = await saveBusinessProfile({
+    ...profile,
+    knowledgeBase: nextKnowledgeBase,
+    unknownQuestions: nextUnknownQuestions,
+  }, slug);
+
+  return {
+    faqItem,
+    knowledgeBase: saved.knowledgeBase,
+    unknownQuestions: saved.unknownQuestions,
+  };
 }
 
 export async function clearUnknownQuestions(businessSlug = DEFAULT_BUSINESS_SLUG) {

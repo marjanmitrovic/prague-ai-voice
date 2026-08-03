@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { createLocalAssistantText, runWeaknessTest } from '../ai/local-business-agent.js';
-import { publicBusinessProfile } from '../business/business-profile.js';
+import { clearUnknownQuestions, getUnknownQuestions, publicBusinessProfile, recordUnknownQuestion } from '../business/business-profile.js';
 import { handleBookingConversation } from '../ai/booking-conversation.js';
 import { env } from '../config/env.js';
 import { requireAdmin } from '../auth.js';
@@ -22,6 +22,17 @@ const testSuiteSchema = z.object({
   questions: z.array(z.string().trim().min(1).max(400)).min(1).max(80),
 });
 
+function splitQuestions(text: string): string[] {
+  const lines = text.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+  if (lines.length > 1) return lines;
+  const pieces = text.split(/(?<=[?？])\s+/).map((item) => item.trim()).filter(Boolean);
+  return pieces.length > 1 ? pieces : [text.trim()];
+}
+
+function shouldRecordUnknown(result: { intent: string; confidence: number }) {
+  return result.intent === 'fallback_with_supported_topics' || result.confidence < 0.7;
+}
+
 export async function assistantRoute(app: FastifyInstance): Promise<void> {
   app.get('/api/assistant/status', async (request) => {
     const businessSlug = safeBusinessSlug((request.query as { businessSlug?: string } | undefined)?.businessSlug || DEFAULT_BUSINESS_SLUG);
@@ -29,7 +40,7 @@ export async function assistantRoute(app: FastifyInstance): Promise<void> {
       ok: true,
       mode: env.AGENT_MODE,
       openaiConfigured: false,
-      model: 'local-business-profile-rules-no-llm-v2',
+      model: 'local-business-profile-rules-no-llm-v4-unknown-report',
       paidApiRequired: false,
       profile: publicBusinessProfile(undefined, businessSlug),
     };
@@ -53,10 +64,54 @@ export async function assistantRoute(app: FastifyInstance): Promise<void> {
     }
 
     const businessSlug = safeBusinessSlug(parsed.data.businessSlug || DEFAULT_BUSINESS_SLUG);
-    const result = createLocalAssistantText(parsed.data.text, businessSlug);
-    request.log.info({ businessSlug, intent: result.intent, confidence: result.confidence }, 'Local assistant response created');
+    const questions = splitQuestions(parsed.data.text);
+    const results = [];
 
-    return reply.send({ ok: true, type: 'assistant_text', businessSlug, ...result });
+    for (const question of questions) {
+      const result = createLocalAssistantText(question, businessSlug);
+      if (shouldRecordUnknown(result)) {
+        await recordUnknownQuestion({
+          businessSlug,
+          question,
+          answer: result.text,
+          intent: result.intent,
+          confidence: result.confidence,
+          recommendation: 'Doplnit odpověď do FAQ nebo přidat synonymum pro tento dotaz.',
+        });
+      }
+      results.push({ question, ...result });
+    }
+
+    const primary = results[0];
+    const text = results.length === 1
+      ? primary.text
+      : results.map((item, index) => `${index + 1}. ${item.question}\n${item.text}`).join('\n\n');
+
+    request.log.info({ businessSlug, questions: results.length, intent: primary.intent, confidence: primary.confidence }, 'Local assistant response created');
+
+    return reply.send({
+      ok: true,
+      type: 'assistant_text',
+      businessSlug,
+      ...primary,
+      text,
+      multiQuestion: results.length > 1,
+      results,
+    });
+  });
+
+  app.get('/api/assistant/unknown-questions', async (request, reply) => {
+    if (!(await requireAdmin(request, reply))) return;
+    const businessSlug = safeBusinessSlug((request.query as { businessSlug?: string } | undefined)?.businessSlug || DEFAULT_BUSINESS_SLUG);
+    const unknownQuestions = getUnknownQuestions(businessSlug);
+    return { ok: true, businessSlug, total: unknownQuestions.length, unknownQuestions };
+  });
+
+  app.delete('/api/assistant/unknown-questions', async (request, reply) => {
+    if (!(await requireAdmin(request, reply))) return;
+    const businessSlug = safeBusinessSlug((request.query as { businessSlug?: string } | undefined)?.businessSlug || DEFAULT_BUSINESS_SLUG);
+    const unknownQuestions = await clearUnknownQuestions(businessSlug);
+    return { ok: true, businessSlug, total: unknownQuestions.length, unknownQuestions };
   });
 
   app.post('/api/assistant/test-suite', async (request, reply) => {

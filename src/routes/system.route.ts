@@ -4,6 +4,7 @@ import type { FastifyInstance } from 'fastify';
 import { requireAdmin } from '../auth.js';
 import { getBusinessProfile, listPublicBusinesses, publicBusinessProfile, reloadBusinessProfile } from '../business/business-profile.js';
 import { listBookings } from '../business/bookings.js';
+import { env } from '../config/env.js';
 import { DEFAULT_BUSINESS_SLUG, getStorageInfo, resetDemoDataFromJsonSeed, safeBusinessSlug } from '../storage-postgres.js';
 import { emailConfigured } from '../email.js';
 
@@ -26,15 +27,21 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
     const profile = getBusinessProfile(businessSlug);
     const bookings = listBookings(businessSlug);
     const businesses = listPublicBusinesses();
+    const storageInfo = getStorageInfo();
+    const mailConfigured = emailConfigured();
+    const voiceGatewayTokenConfigured = Boolean(env.VOICE_GATEWAY_TOKEN);
+
     return {
       ok: true,
-      version: '2.0.0',
-      mode: 'no-llm-weakness-simulator-demo',
-      storage: getStorageInfo().mode,
-      databaseUrlConfigured: getStorageInfo().databaseUrlConfigured,
-      telephony: 'disabled',
+      version: '3.3.0',
+      mode: 'production-polish-no-paid-llm',
+      storage: storageInfo.mode,
+      databaseUrlConfigured: storageInfo.databaseUrlConfigured,
+      telephony: 'voice-gateway-webhook-ready',
+      voiceGatewayWebhook: '/api/voice/missed-call',
+      voiceGatewayTokenConfigured,
       paidApis: 'disabled',
-      emailConfigured: emailConfigured(),
+      emailConfigured: mailConfigured,
       businessSlug,
       businessesCount: businesses.length,
       businesses,
@@ -50,13 +57,17 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
         conversationalBooking: true,
         czechTts: true,
         adminLogin: true,
-        emailConfirmation: emailConfigured(),
+        emailConfirmation: mailConfigured,
         multiBusiness: true,
         salesLanding: true,
         clientOnboarding: true,
         clientManagement: true,
         knowledgeBase: true,
         weaknessSimulator: true,
+        callLeadCapture: true,
+        callLeadEmail: mailConfigured,
+        voiceGatewayWebhook: true,
+        voiceGatewayToken: voiceGatewayTokenConfigured,
       },
     };
   });

@@ -16,6 +16,7 @@ const envSchema = z.object({
   EDGE_TTS_PYTHON: optionalString,
   DATABASE_URL: optionalUrl,
   ADMIN_PASSWORD: z.string().min(8).optional(),
+  VOICE_GATEWAY_TOKEN: optionalString,
   SMTP_HOST: optionalString,
   SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(587),
   SMTP_SECURE: z.coerce.boolean().default(false),

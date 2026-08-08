@@ -1,9 +1,9 @@
 {
   "name": "prague-ai-voice",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "private": true,
   "type": "module",
-  "description": "Prague AI Voice - voice gateway webhook pro zachycení zmeškaných hovorů jako call leadů",
+  "description": "Prague AI Voice - produkční kontrola, onboarding checklist a stav nasazení pro prodejní MVP",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",

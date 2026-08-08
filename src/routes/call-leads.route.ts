@@ -17,6 +17,7 @@ type CallLeadRow = {
   customer_phone: string;
   service_name: string;
   message: string;
+  owner_note: string | null;
   source: string;
   created_at: string;
   updated_at: string;
@@ -32,12 +33,14 @@ const callLeadSchema = z.object({
   customerPhone: z.string().trim().min(3).max(80),
   serviceName: z.string().trim().min(1).max(160),
   message: z.string().trim().min(1).max(3000),
+  ownerNote: z.string().trim().max(2000).optional().default(''),
   status: z.enum(['nové', 'volat zpět', 'rezervace', 'hotovo']).optional().default('nové'),
   source: z.string().trim().min(1).max(80).optional().default('missed_call_demo'),
 });
 
-const updateStatusSchema = z.object({
-  status: z.enum(['nové', 'volat zpět', 'rezervace', 'hotovo']),
+const updateLeadSchema = z.object({
+  status: z.enum(['nové', 'volat zpět', 'rezervace', 'hotovo']).optional(),
+  ownerNote: z.string().trim().max(2000).optional(),
 });
 
 function getPool(): pg.Pool | null {
@@ -62,10 +65,12 @@ async function ensureCallLeadTable(): Promise<pg.Pool | null> {
       customer_phone TEXT NOT NULL,
       service_name TEXT NOT NULL,
       message TEXT NOT NULL,
+      owner_note TEXT,
       source TEXT NOT NULL DEFAULT 'missed_call',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+    ALTER TABLE call_leads ADD COLUMN IF NOT EXISTS owner_note TEXT;
     CREATE INDEX IF NOT EXISTS idx_call_leads_business_created ON call_leads(business_slug, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_call_leads_status ON call_leads(status);
   `);
@@ -82,6 +87,7 @@ function publicLead(row: CallLeadRow) {
     customerPhone: row.customer_phone,
     serviceName: row.service_name,
     message: row.message,
+    ownerNote: row.owner_note || '',
     source: row.source,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -145,6 +151,7 @@ export async function callLeadsRoute(app: FastifyInstance): Promise<void> {
       customer_phone: parsed.data.customerPhone,
       service_name: parsed.data.serviceName,
       message: parsed.data.message,
+      owner_note: parsed.data.ownerNote || '',
       source: parsed.data.source,
       created_at: now,
       updated_at: now,
@@ -159,9 +166,21 @@ export async function callLeadsRoute(app: FastifyInstance): Promise<void> {
 
     await selectedPool.query(
       `INSERT INTO call_leads (
-        id, business_slug, status, customer_name, customer_phone, service_name, message, source, created_at, updated_at
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-      [row.id, row.business_slug, row.status, row.customer_name, row.customer_phone, row.service_name, row.message, row.source, row.created_at, row.updated_at],
+        id, business_slug, status, customer_name, customer_phone, service_name, message, owner_note, source, created_at, updated_at
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      [
+        row.id,
+        row.business_slug,
+        row.status,
+        row.customer_name,
+        row.customer_phone,
+        row.service_name,
+        row.message,
+        row.owner_note,
+        row.source,
+        row.created_at,
+        row.updated_at,
+      ],
     );
 
     const notification = await notifyLead(row);
@@ -171,20 +190,34 @@ export async function callLeadsRoute(app: FastifyInstance): Promise<void> {
   app.patch('/api/call-leads/:id', async (request, reply) => {
     if (!(await requireAdmin(request, reply))) return;
     const id = (request.params as { id: string }).id;
-    const parsed = updateStatusSchema.safeParse(request.body);
+    const parsed = updateLeadSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_request', details: parsed.error.flatten() });
+
+    if (parsed.data.status === undefined && parsed.data.ownerNote === undefined) {
+      return reply.code(400).send({ error: 'invalid_request', message: 'Není co uložit.' });
+    }
 
     const selectedPool = await ensureCallLeadTable();
     if (!selectedPool) {
-      memoryLeads = memoryLeads.map((lead) => lead.id === id ? { ...lead, status: parsed.data.status, updated_at: new Date().toISOString() } : lead);
+      memoryLeads = memoryLeads.map((lead) => lead.id === id
+        ? {
+            ...lead,
+            status: parsed.data.status ?? lead.status,
+            owner_note: parsed.data.ownerNote ?? lead.owner_note,
+            updated_at: new Date().toISOString(),
+          }
+        : lead);
       const lead = memoryLeads.find((item) => item.id === id);
       if (!lead) return reply.code(404).send({ error: 'not_found' });
       return { ok: true, storage: 'memory', lead: publicLead(lead) };
     }
 
     const rows = await selectedPool.query<CallLeadRow>(
-      `UPDATE call_leads SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
-      [parsed.data.status, id],
+      `UPDATE call_leads
+       SET status = COALESCE($1, status), owner_note = COALESCE($2, owner_note), updated_at = NOW()
+       WHERE id = $3
+       RETURNING *`,
+      [parsed.data.status ?? null, parsed.data.ownerNote ?? null, id],
     );
     const lead = rows.rows.at(0);
     if (!lead) return reply.code(404).send({ error: 'not_found' });

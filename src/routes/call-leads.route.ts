@@ -9,10 +9,23 @@ import { DEFAULT_BUSINESS_SLUG, safeBusinessSlug } from '../storage-postgres.js'
 
 const { Pool } = pg;
 
+export type CallLeadStatus = 'nové' | 'volat zpět' | 'rezervace' | 'hotovo';
+
+export type CallLeadInput = {
+  businessSlug?: string;
+  customerName: string;
+  customerPhone: string;
+  serviceName: string;
+  message: string;
+  ownerNote?: string;
+  status?: CallLeadStatus;
+  source?: string;
+};
+
 type CallLeadRow = {
   id: string;
   business_slug: string;
-  status: string;
+  status: CallLeadStatus;
   customer_name: string;
   customer_phone: string;
   service_name: string;
@@ -116,6 +129,53 @@ async function notifyLead(row: CallLeadRow) {
   }
 }
 
+export async function createCallLead(input: CallLeadInput) {
+  const businessSlug = safeBusinessSlug(input.businessSlug || DEFAULT_BUSINESS_SLUG);
+  const now = new Date().toISOString();
+  const row: CallLeadRow = {
+    id: randomUUID(),
+    business_slug: businessSlug,
+    status: input.status || 'nové',
+    customer_name: input.customerName,
+    customer_phone: input.customerPhone,
+    service_name: input.serviceName,
+    message: input.message,
+    owner_note: input.ownerNote || '',
+    source: input.source || 'missed_call',
+    created_at: now,
+    updated_at: now,
+  };
+
+  const selectedPool = await ensureCallLeadTable();
+  if (!selectedPool) {
+    memoryLeads = [row, ...memoryLeads].slice(0, 300);
+    const notification = await notifyLead(row);
+    return { storage: 'memory', lead: publicLead(row), notification };
+  }
+
+  await selectedPool.query(
+    `INSERT INTO call_leads (
+      id, business_slug, status, customer_name, customer_phone, service_name, message, owner_note, source, created_at, updated_at
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+    [
+      row.id,
+      row.business_slug,
+      row.status,
+      row.customer_name,
+      row.customer_phone,
+      row.service_name,
+      row.message,
+      row.owner_note,
+      row.source,
+      row.created_at,
+      row.updated_at,
+    ],
+  );
+
+  const notification = await notifyLead(row);
+  return { storage: 'postgres', lead: publicLead(row), notification };
+}
+
 export async function callLeadsRoute(app: FastifyInstance): Promise<void> {
   app.get('/api/call-leads', async (request, reply) => {
     if (!(await requireAdmin(request, reply))) return;
@@ -141,50 +201,8 @@ export async function callLeadsRoute(app: FastifyInstance): Promise<void> {
       return reply.code(400).send({ error: 'invalid_request', details: parsed.error.flatten() });
     }
 
-    const businessSlug = safeBusinessSlug(parsed.data.businessSlug || DEFAULT_BUSINESS_SLUG);
-    const now = new Date().toISOString();
-    const row: CallLeadRow = {
-      id: randomUUID(),
-      business_slug: businessSlug,
-      status: parsed.data.status,
-      customer_name: parsed.data.customerName,
-      customer_phone: parsed.data.customerPhone,
-      service_name: parsed.data.serviceName,
-      message: parsed.data.message,
-      owner_note: parsed.data.ownerNote || '',
-      source: parsed.data.source,
-      created_at: now,
-      updated_at: now,
-    };
-
-    const selectedPool = await ensureCallLeadTable();
-    if (!selectedPool) {
-      memoryLeads = [row, ...memoryLeads].slice(0, 300);
-      const notification = await notifyLead(row);
-      return reply.code(201).send({ ok: true, storage: 'memory', lead: publicLead(row), notification });
-    }
-
-    await selectedPool.query(
-      `INSERT INTO call_leads (
-        id, business_slug, status, customer_name, customer_phone, service_name, message, owner_note, source, created_at, updated_at
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-      [
-        row.id,
-        row.business_slug,
-        row.status,
-        row.customer_name,
-        row.customer_phone,
-        row.service_name,
-        row.message,
-        row.owner_note,
-        row.source,
-        row.created_at,
-        row.updated_at,
-      ],
-    );
-
-    const notification = await notifyLead(row);
-    return reply.code(201).send({ ok: true, storage: 'postgres', lead: publicLead(row), notification });
+    const result = await createCallLead(parsed.data);
+    return reply.code(201).send({ ok: true, ...result });
   });
 
   app.patch('/api/call-leads/:id', async (request, reply) => {

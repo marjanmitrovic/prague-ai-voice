@@ -12,14 +12,14 @@ const { Pool } = pg;
 export type CallLeadStatus = 'nové' | 'volat zpět' | 'rezervace' | 'hotovo';
 
 export type CallLeadInput = {
-  businessSlug?: string;
+  businessSlug?: string | undefined;
   customerName: string;
   customerPhone: string;
   serviceName: string;
   message: string;
-  ownerNote?: string;
-  status?: CallLeadStatus;
-  source?: string;
+  ownerNote?: string | undefined;
+  status?: CallLeadStatus | undefined;
+  source?: string | undefined;
 };
 
 type CallLeadRow = {

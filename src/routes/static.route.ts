@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
 const publicDir = path.resolve(process.cwd(), 'public');
-const APP_VERSION = '3.1.0';
+const APP_VERSION = '3.2.0';
 
 const contentTypes: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -56,6 +56,7 @@ function applyRuntimeHtmlFixes(relativePath: string, file: Buffer): Buffer {
     .replace(/2\.7\.0/g, APP_VERSION)
     .replace(/2\.8\.0/g, APP_VERSION)
     .replace(/3\.0\.0/g, APP_VERSION)
+    .replace(/3\.1\.0/g, APP_VERSION)
     .replace(/Jedno pitanje po řádku\./g, 'Jedna otázka na řádek.')
     .replace(/<a href="#demoVoice">Test českého hlasu<\/a>/g, '<a href="#demoVoice">Test českého hlasu</a>\n        <a href="/demo-scenarios" target="_blank" rel="noreferrer">Demo scénáře</a>\n        <a href="/sales-presentation" target="_blank" rel="noreferrer">Prodejní prezentace</a>\n        <a href="/phone-connection" target="_blank" rel="noreferrer">Telefonní napojení</a>\n        <a href="/call-leads" target="_blank" rel="noreferrer">Zmeškané hovory</a>')
     .replace(/<a href="\/website-import" target="_blank" rel="noreferrer">Import z webu<\/a>/g, '<a href="/website-import" target="_blank" rel="noreferrer">Import z webu</a>\n          <a href="/demo-scenarios" target="_blank" rel="noreferrer">Demo scénáře</a>\n          <a href="/sales-presentation" target="_blank" rel="noreferrer">Prodejní prezentace</a>\n          <a href="/phone-connection" target="_blank" rel="noreferrer">Telefonní napojení</a>\n          <a href="/call-leads" target="_blank" rel="noreferrer">Zmeškané hovory</a>')

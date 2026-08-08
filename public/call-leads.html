@@ -8,29 +8,32 @@
     :root { --bg:#f4f7fb; --panel:#fff; --text:#122033; --muted:#64748b; --border:#dbe3ee; --primary:#2563eb; --good:#047857; --warn:#b45309; --danger:#b91c1c; }
     * { box-sizing:border-box; }
     body { margin:0; font-family:Inter, Segoe UI, Arial, sans-serif; color:var(--text); background:linear-gradient(180deg,#f8fbff,var(--bg)); line-height:1.5; }
-    main { max-width:1180px; margin:0 auto; padding:28px; }
+    main { max-width:1200px; margin:0 auto; padding:28px; }
     .topnav a { color:#1d4ed8; text-decoration:none; font-weight:900; margin-right:14px; }
     .hero,.panel { background:var(--panel); border:1px solid var(--border); border-radius:22px; padding:20px; margin:0 0 18px; box-shadow:0 14px 35px rgba(15,23,42,.06); }
     h1,h2,h3 { margin:0 0 10px; letter-spacing:-.02em; }
     p { color:var(--muted); }
     .badge { display:inline-flex; padding:4px 10px; border-radius:999px; background:#dcfce7; color:#047857; font-weight:900; font-size:13px; }
-    .grid { display:grid; grid-template-columns:minmax(320px,.8fr) minmax(0,1.2fr); gap:16px; }
+    .grid { display:grid; grid-template-columns:minmax(320px,.75fr) minmax(0,1.25fr); gap:16px; }
+    .lead-area { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr); gap:16px; }
     label { display:block; font-weight:900; margin:10px 0 5px; }
     input,select,textarea { width:100%; border:1px solid var(--border); border-radius:14px; padding:11px 12px; font:inherit; background:#fff; }
     textarea { min-height:110px; resize:vertical; }
-    button { border:0; border-radius:14px; padding:11px 15px; font:inherit; font-weight:900; color:#fff; background:var(--primary); cursor:pointer; margin:8px 8px 0 0; }
-    button.secondary { color:#0f172a; background:#e8eef8; }
+    button, .btn { border:0; border-radius:14px; padding:11px 15px; font:inherit; font-weight:900; color:#fff; background:var(--primary); cursor:pointer; margin:8px 8px 0 0; text-decoration:none; display:inline-flex; }
+    button.secondary, .btn.secondary { color:#0f172a; background:#e8eef8; }
     button.danger { background:var(--danger); }
+    button.smallbtn { padding:7px 10px; font-size:13px; }
     table { width:100%; border-collapse:collapse; margin-top:10px; }
     th,td { text-align:left; padding:10px; border-bottom:1px solid var(--border); vertical-align:top; }
     th { color:#334155; background:#f8fafc; }
-    .status { display:inline-flex; padding:3px 8px; border-radius:999px; font-weight:900; font-size:12px; background:#eef6ff; color:#1d4ed8; }
-    .status.hotovo { background:#dcfce7; color:#047857; }
-    .status.nove { background:#fff7ed; color:#9a3412; }
     .empty { padding:15px; border:1px solid #bbf7d0; background:#ecfdf5; color:#047857; border-radius:14px; font-weight:900; }
     .small { color:var(--muted); font-size:13px; }
     .mail-note { background:#eef6ff; border:1px solid #bfdbfe; border-radius:14px; padding:12px; color:#1e3a8a; }
-    @media (max-width:900px){ main{padding:16px}.grid{grid-template-columns:1fr} table{font-size:14px} }
+    .detail-line { border-bottom:1px solid var(--border); padding:9px 0; }
+    .detail-line b { display:block; color:#0f172a; }
+    .actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .actions .btn, .actions button { margin:0; }
+    @media (max-width:1000px){ main{padding:16px}.grid,.lead-area{grid-template-columns:1fr} table{font-size:14px} }
   </style>
 </head>
 <body>
@@ -42,15 +45,15 @@
     </div>
 
     <section class="hero">
-      <span class="badge">3.0.0 — Call Lead Email Notification</span>
+      <span class="badge">3.1.0 — Detail leadu a zpětné zavolání</span>
       <h1>Zachycené zmeškané hovory</h1>
-      <p>AI asistent zachytí požadavek ze zmeškaného hovoru, uloží ho jako lead a při nastaveném SMTP odešle e-mail majiteli firmy.</p>
+      <p>AI asistent zachytí požadavek ze zmeškaného hovoru, uloží ho jako lead, odešle e-mail a umožní majiteli rychle zavolat zpět nebo vytvořit rezervaci.</p>
     </section>
 
     <section class="grid">
       <div class="panel">
         <h2>Přidat ukázkový hovor</h2>
-        <label for="adminPassword">Administrátorské heslo pro načtení seznamu</label>
+        <label for="adminPassword">Administrátorské heslo</label>
         <input id="adminPassword" type="password" placeholder="ADMIN_PASSWORD" />
         <label for="customerName">Jméno zákazníka</label>
         <input id="customerName" value="" placeholder="Jméno zákazníka" />
@@ -73,26 +76,35 @@
         <p class="mail-note"><b>E-mail:</b> pokud jsou nastavené SMTP proměnné a BUSINESS_OWNER_EMAIL, nový lead se pošle e-mailem.</p>
       </div>
 
-      <div class="panel">
-        <h2>Seznam leadů</h2>
-        <div id="leadBox"></div>
-        <button id="loadBtn" class="secondary">Načíst ze serveru</button>
-        <button id="exportBtn" class="secondary">Export CSV</button>
-        <button id="clearBtn" class="danger">Vyčistit serverová data</button>
+      <div class="lead-area">
+        <div class="panel">
+          <h2>Seznam leadů</h2>
+          <div id="leadBox"></div>
+          <button id="loadBtn" class="secondary">Načíst ze serveru</button>
+          <button id="exportBtn" class="secondary">Export CSV</button>
+          <button id="clearBtn" class="danger">Vyčistit serverová data</button>
+        </div>
+
+        <div class="panel">
+          <h2>Detail leadu</h2>
+          <div id="detailBox" class="empty">Vyberte lead ze seznamu.</div>
+        </div>
       </div>
     </section>
 
     <section class="panel">
       <h2>Produkční smysl</h2>
-      <p>Telekomunikační brána později pošle do tohoto API výsledek hovoru: jméno, telefon, službu, přepis a status. Majitel firmy pak vidí, komu má zavolat zpět, a dostane okamžité upozornění e-mailem.</p>
+      <p>Majitel firmy vidí konkrétní zmeškaný hovor, jedním klikem zavolá zpět, doplní poznámku a může otevřít rezervaci.</p>
     </section>
   </main>
 
   <script>
     const leadBox = document.getElementById('leadBox');
+    const detailBox = document.getElementById('detailBox');
     const statusBox = document.getElementById('statusBox');
     const adminPassword = document.getElementById('adminPassword');
     let currentLeads = [];
+    let selectedLeadId = '';
     adminPassword.value = sessionStorage.getItem('pragueAiVoiceAdminPassword') || '';
 
     const sampleLeads = [
@@ -124,40 +136,84 @@
       };
     }
 
+    function phoneHref(phone) {
+      return 'tel:' + String(phone || '').replace(/[^+0-9]/g, '');
+    }
+
+    function renderDetail(lead) {
+      if (!lead) {
+        detailBox.className = 'empty';
+        detailBox.textContent = 'Vyberte lead ze seznamu.';
+        return;
+      }
+      detailBox.className = '';
+      detailBox.innerHTML = `
+        <div class="detail-line"><b>Zákazník</b>${lead.customerName || '—'}</div>
+        <div class="detail-line"><b>Telefon</b>${lead.customerPhone || '—'}</div>
+        <div class="detail-line"><b>Služba</b>${lead.serviceName || '—'}</div>
+        <div class="detail-line"><b>Zpráva</b>${lead.message || '—'}</div>
+        <div class="detail-line"><b>Vytvořeno</b>${new Date(lead.createdAt).toLocaleString('cs-CZ')}</div>
+        <label for="detailStatus">Status</label>
+        <select id="detailStatus">
+          ${['nové','volat zpět','rezervace','hotovo'].map((status) => `<option value="${status}" ${lead.status === status ? 'selected' : ''}>${status}</option>`).join('')}
+        </select>
+        <label for="ownerNote">Poznámka majitele</label>
+        <textarea id="ownerNote" placeholder="Například: Zavolat po 16:00, chce pátek dopoledne.">${lead.ownerNote || ''}</textarea>
+        <div class="actions">
+          <a class="btn" href="${phoneHref(lead.customerPhone)}">Zavolat zpět</a>
+          <a class="btn secondary" href="/booking" target="_blank" rel="noreferrer">Vytvořit rezervaci</a>
+          <button id="saveDetailBtn">Uložit detail</button>
+          <button id="doneBtn" class="secondary">Označit hotovo</button>
+        </div>`;
+
+      document.getElementById('saveDetailBtn').onclick = async () => {
+        await updateLead(lead.id, {
+          status: document.getElementById('detailStatus').value,
+          ownerNote: document.getElementById('ownerNote').value,
+        });
+      };
+      document.getElementById('doneBtn').onclick = async () => updateLead(lead.id, { status: 'hotovo', ownerNote: document.getElementById('ownerNote').value });
+    }
+
     function render(leads) {
       currentLeads = leads || [];
       if (!currentLeads.length) {
         leadBox.innerHTML = '<div class="empty">Zatím nejsou uložené žádné leady.</div>';
+        renderDetail(null);
         return;
       }
       leadBox.innerHTML = `
         <table>
-          <thead><tr><th>Čas</th><th>Zákazník</th><th>Služba</th><th>Zpráva</th><th>Status</th></tr></thead>
+          <thead><tr><th>Čas</th><th>Zákazník</th><th>Služba</th><th>Status</th><th>Akce</th></tr></thead>
           <tbody>${currentLeads.map((lead) => `
             <tr>
               <td>${new Date(lead.createdAt).toLocaleString('cs-CZ')}</td>
               <td><b>${lead.customerName}</b><br>${lead.customerPhone}</td>
               <td>${lead.serviceName}</td>
-              <td>${lead.message}</td>
-              <td>
-                <select data-id="${lead.id}">
-                  ${['nové','volat zpět','rezervace','hotovo'].map((status) => `<option value="${status}" ${lead.status === status ? 'selected' : ''}>${status}</option>`).join('')}
-                </select>
-              </td>
+              <td>${lead.status}</td>
+              <td><button class="smallbtn secondary" data-detail="${lead.id}">Detail</button></td>
             </tr>
           `).join('')}</tbody>
         </table>`;
-      document.querySelectorAll('[data-id]').forEach((select) => {
-        select.addEventListener('change', async () => {
-          await jsonFetch(`/api/call-leads/${select.dataset.id}`, {
-            method:'PATCH',
-            headers:{ 'Content-Type':'application/json' },
-            body:JSON.stringify({ status: select.value })
-          });
-          statusBox.textContent = 'Status uložen.';
-          await loadLeads();
+      document.querySelectorAll('[data-detail]').forEach((button) => {
+        button.addEventListener('click', () => {
+          selectedLeadId = button.dataset.detail;
+          renderDetail(currentLeads.find((lead) => lead.id === selectedLeadId));
         });
       });
+      const selected = currentLeads.find((lead) => lead.id === selectedLeadId) || currentLeads[0];
+      selectedLeadId = selected.id;
+      renderDetail(selected);
+    }
+
+    async function updateLead(id, payload) {
+      await jsonFetch(`/api/call-leads/${id}`, {
+        method:'PATCH',
+        headers:{ 'Content-Type':'application/json' },
+        body:JSON.stringify(payload)
+      });
+      statusBox.textContent = 'Detail uložen.';
+      await loadLeads();
     }
 
     async function loadLeads() {
@@ -179,6 +235,7 @@
         headers:{ 'Content-Type':'application/json' },
         body:JSON.stringify(input)
       });
+      selectedLeadId = data.lead?.id || '';
       statusBox.textContent = `Lead uložen | úložiště: ${data.storage}${notificationText(data.notification)}`;
       await loadLeads();
     }
@@ -204,12 +261,13 @@
       if (!confirm('Vyčistit serverové leady?')) return;
       try {
         await jsonFetch('/api/call-leads', { method:'DELETE' });
+        selectedLeadId = '';
         await loadLeads();
       } catch (error) { statusBox.textContent = error.message; }
     };
 
     document.getElementById('exportBtn').onclick = () => {
-      const header = ['createdAt','customerName','customerPhone','serviceName','message','status'];
+      const header = ['createdAt','customerName','customerPhone','serviceName','message','ownerNote','status'];
       const rows = [header.join(','), ...currentLeads.map((lead) => header.map((key) => `"${String(lead[key] || '').replaceAll('"','""')}"`).join(','))];
       const blob = new Blob([rows.join('\n')], { type:'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);

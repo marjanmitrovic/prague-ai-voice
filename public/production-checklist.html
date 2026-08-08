@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Produkční kontrola — Prague AI Voice</title>
+  <style>
+    :root { --bg:#f4f7fb; --panel:#fff; --text:#122033; --muted:#64748b; --border:#dbe3ee; --primary:#2563eb; --good:#047857; --warn:#b45309; --bad:#b91c1c; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter, Segoe UI, Arial, sans-serif; color:var(--text); background:linear-gradient(180deg,#f8fbff,var(--bg)); line-height:1.5; }
+    main { max-width:1180px; margin:0 auto; padding:28px; }
+    .topnav a { color:#1d4ed8; text-decoration:none; font-weight:900; margin-right:14px; }
+    .hero,.panel { background:var(--panel); border:1px solid var(--border); border-radius:22px; padding:20px; margin:0 0 18px; box-shadow:0 14px 35px rgba(15,23,42,.06); }
+    h1,h2,h3 { margin:0 0 10px; letter-spacing:-.02em; }
+    p { color:var(--muted); }
+    .badge { display:inline-flex; padding:4px 10px; border-radius:999px; background:#dcfce7; color:#047857; font-weight:900; font-size:13px; }
+    .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+    .two { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; }
+    .card { border:1px solid var(--border); border-radius:18px; padding:16px; background:#fff; }
+    .ok { color:var(--good); font-weight:900; }
+    .warn { color:var(--warn); font-weight:900; }
+    .bad { color:var(--bad); font-weight:900; }
+    ul { margin:10px 0 0; padding-left:20px; }
+    li { margin:6px 0; }
+    button, .btn { border:0; border-radius:14px; padding:11px 15px; font:inherit; font-weight:900; color:#fff; background:var(--primary); cursor:pointer; margin:8px 8px 0 0; text-decoration:none; display:inline-flex; }
+    .btn.secondary, button.secondary { color:#0f172a; background:#e8eef8; }
+    pre { white-space:pre-wrap; background:#0f172a; color:#e5eefc; border-radius:16px; padding:15px; overflow:auto; }
+    input,textarea { width:100%; border:1px solid var(--border); border-radius:14px; padding:11px 12px; font:inherit; background:#fff; }
+    label { display:block; font-weight:900; margin:10px 0 5px; }
+    .pill { display:inline-flex; padding:4px 9px; border-radius:999px; background:#eef6ff; color:#1d4ed8; font-weight:900; font-size:12px; }
+    @media (max-width:900px){ main{padding:16px}.grid,.two{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="topnav">
+      <a href="/">Ovládací panel</a>
+      <a href="/call-leads">Zmeškané hovory</a>
+      <a href="/phone-connection">Telefonní napojení</a>
+      <a href="/sales-presentation">Prodejní prezentace</a>
+    </div>
+
+    <section class="hero">
+      <span class="badge">3.3.0 — Production Polish</span>
+      <h1>Produkční kontrola a onboarding klienta</h1>
+      <p>Jedna stránka pro kontrolu nasazení, přípravu klienta a ověření, že jsou připravené rezervace, e-mail, databáze a telefonní webhook.</p>
+      <button id="loadStatusBtn">Načíst stav systému</button>
+      <a class="btn secondary" href="/api/system/status" target="_blank" rel="noreferrer">Otevřít JSON status</a>
+    </section>
+
+    <section class="grid" id="statusCards">
+      <div class="card"><h3>Databáze</h3><p id="dbStatus">Nenačteno</p></div>
+      <div class="card"><h3>E-mail</h3><p id="mailStatus">Nenačteno</p></div>
+      <div class="card"><h3>Telefonní webhook</h3><p id="voiceStatus">Nenačteno</p></div>
+    </section>
+
+    <section class="two">
+      <div class="panel">
+        <h2>Checklist před prodejem</h2>
+        <ul>
+          <li>Otevřít <span class="pill">/sales-presentation</span> a ukázat klientovi obchodní přínos.</li>
+          <li>Otevřít <span class="pill">/demo-scenarios</span> a vybrat nejbližší obor.</li>
+          <li>Otevřít <span class="pill">/phone-connection</span> a vysvětlit přesměrování zmeškaných hovorů.</li>
+          <li>Otevřít <span class="pill">/call-leads</span> a ukázat, jak se ukládá zmeškaný hovor.</li>
+          <li>Ověřit, že TTS odpovídá česky a rezervace fungují.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h2>Checklist nasazení na Renderu</h2>
+        <ul>
+          <li><b>DATABASE_URL</b> nastaveno pro Neon PostgreSQL.</li>
+          <li><b>ADMIN_PASSWORD</b> nastaveno a má alespoň 8 znaků.</li>
+          <li><b>SMTP_*</b> a <b>BUSINESS_OWNER_EMAIL</b> nastaveno pro upozornění e-mailem.</li>
+          <li><b>VOICE_GATEWAY_TOKEN</b> nastavit před reálným napojením telefonie.</li>
+          <li>Po každém větším releasu použít Clear build cache & deploy.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Test telefonního webhooku</h2>
+      <p>Po deployi nahraď URL svou Render adresou. Pokud není nastavený VOICE_GATEWAY_TOKEN, vynech Authorization header.</p>
+      <label for="baseUrl">Render URL</label>
+      <input id="baseUrl" placeholder="https://tvoje-aplikace.onrender.com" />
+      <label for="token">VOICE_GATEWAY_TOKEN</label>
+      <input id="token" placeholder="nepovinné pro test" />
+      <button id="makeCurlBtn">Vygenerovat curl</button>
+      <pre id="curlBox"></pre>
+    </section>
+
+    <section class="panel">
+      <h2>Doporučený pořádek testu</h2>
+      <pre>1. /api/system/status
+2. /call-leads — vložit demo lead
+3. /api/voice/missed-call — curl test
+4. /call-leads — ověřit nový lead
+5. /booking — ověřit veřejnou rezervaci
+6. /unknown-questions — ověřit učení FAQ</pre>
+    </section>
+  </main>
+
+  <script>
+    const dbStatus = document.getElementById('dbStatus');
+    const mailStatus = document.getElementById('mailStatus');
+    const voiceStatus = document.getElementById('voiceStatus');
+    const curlBox = document.getElementById('curlBox');
+
+    function statusText(ok, yes, no) {
+      return ok ? `<span class="ok">${yes}</span>` : `<span class="warn">${no}</span>`;
+    }
+
+    async function loadStatus() {
+      try {
+        const res = await fetch('/api/system/status');
+        const data = await res.json();
+        dbStatus.innerHTML = `${statusText(data.databaseUrlConfigured, 'DATABASE_URL nastaveno', 'DATABASE_URL není nastaveno')}<br>Úložiště: <b>${data.storage || 'neznámé'}</b>`;
+        mailStatus.innerHTML = `${statusText(data.emailConfigured, 'SMTP připraveno', 'SMTP není nastavené')}<br>Upozornění e-mailem: <b>${data.emailConfigured ? 'aktivní' : 'vypnuto'}</b>`;
+        voiceStatus.innerHTML = `${statusText(data.voiceGatewayTokenConfigured, 'Token nastaven', 'Token není nastaven')}<br>Webhook: <b>/api/voice/missed-call</b>`;
+      } catch (error) {
+        dbStatus.innerHTML = '<span class="bad">Status nelze načíst</span>';
+        mailStatus.textContent = error.message;
+        voiceStatus.textContent = error.message;
+      }
+    }
+
+    function makeCurl() {
+      const base = document.getElementById('baseUrl').value.trim() || 'https://TVOJ-RENDER-URL.onrender.com';
+      const token = document.getElementById('token').value.trim();
+      const auth = token ? ` \\\n  -H "Authorization: Bearer ${token}"` : '';
+      curlBox.textContent = `curl -X POST "${base.replace(/\/$/, '')}/api/voice/missed-call" \\\n  -H "Content-Type: application/json"${auth} \\\n  -d '{
+    "customerPhone": "+420777111222",
+    "customerName": "Test zákazník",
+    "serviceName": "Telefonický dotaz",
+    "message": "Zákazník volal mimo pracovní dobu a chce termín zítra odpoledne.",
+    "source": "voice_gateway"
+  }'`;
+    }
+
+    document.getElementById('loadStatusBtn').onclick = loadStatus;
+    document.getElementById('makeCurlBtn').onclick = makeCurl;
+    loadStatus();
+    makeCurl();
+  </script>
+</body>
+</html>

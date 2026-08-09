@@ -5,7 +5,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { env } from '../config/env.js';
 
 const publicDir = path.resolve(process.cwd(), 'public');
-const APP_VERSION = '3.5.0';
+const APP_VERSION = '3.6.0';
 const ADMIN_COOKIE_NAME = 'pav_admin_session';
 const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
 
@@ -76,11 +76,21 @@ function hasAdminSession(request: FastifyRequest): boolean {
   return safeEqual(signature, signAdminSession(exp));
 }
 
+function cookieSecureSuffix(): string {
+  return env.NODE_ENV === 'production' ? '; Secure' : '';
+}
+
 function setAdminCookie(reply: FastifyReply): void {
-  const secure = env.NODE_ENV === 'production' ? '; Secure' : '';
   reply.header(
     'Set-Cookie',
-    `${ADMIN_COOKIE_NAME}=${encodeURIComponent(createAdminSessionToken())}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${ADMIN_SESSION_MAX_AGE_SECONDS}${secure}`,
+    `${ADMIN_COOKIE_NAME}=${encodeURIComponent(createAdminSessionToken())}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${ADMIN_SESSION_MAX_AGE_SECONDS}${cookieSecureSuffix()}`,
+  );
+}
+
+function clearAdminCookie(reply: FastifyReply): void {
+  reply.header(
+    'Set-Cookie',
+    `${ADMIN_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${cookieSecureSuffix()}`,
   );
 }
 
@@ -121,9 +131,10 @@ function applyRuntimeHtmlFixes(relativePath: string, file: Buffer): Buffer {
     .replace(/3\.2\.0/g, APP_VERSION)
     .replace(/3\.3\.0/g, APP_VERSION)
     .replace(/3\.4\.0/g, APP_VERSION)
+    .replace(/3\.5\.0/g, APP_VERSION)
     .replace(/Jedno pitanje po řádku\./g, 'Jedna otázka na řádek.')
-    .replace(/<a href="#demoVoice">Test českého hlasu<\/a>/g, '<a href="#demoVoice">Test českého hlasu</a>\n        <a href="/demo-scenarios" target="_blank" rel="noreferrer">Demo scénáře</a>\n        <a href="/sales-presentation" target="_blank" rel="noreferrer">Prodejní prezentace</a>\n        <a href="/phone-connection" target="_blank" rel="noreferrer">Telefonní napojení</a>\n        <a href="/call-leads" target="_blank" rel="noreferrer">Zmeškané hovory</a>\n        <a href="/production-checklist" target="_blank" rel="noreferrer">Produkční kontrola</a>')
-    .replace(/<a href="\/website-import" target="_blank" rel="noreferrer">Import z webu<\/a>/g, '<a href="/website-import" target="_blank" rel="noreferrer">Import z webu</a>\n          <a href="/demo-scenarios" target="_blank" rel="noreferrer">Demo scénáře</a>\n          <a href="/sales-presentation" target="_blank" rel="noreferrer">Prodejní prezentace</a>\n          <a href="/phone-connection" target="_blank" rel="noreferrer">Telefonní napojení</a>\n          <a href="/call-leads" target="_blank" rel="noreferrer">Zmeškané hovory</a>\n          <a href="/production-checklist" target="_blank" rel="noreferrer">Produkční kontrola</a>')
+    .replace(/<a href="#demoVoice">Test českého hlasu<\/a>/g, '<a href="#demoVoice">Test českého hlasu</a>\n        <a href="/demo-scenarios" target="_blank" rel="noreferrer">Demo scénáře</a>\n        <a href="/sales-presentation" target="_blank" rel="noreferrer">Prodejní prezentace</a>\n        <a href="/phone-connection" target="_blank" rel="noreferrer">Telefonní napojení</a>\n        <a href="/admin-login" target="_blank" rel="noreferrer">Admin</a>')
+    .replace(/<a href="\/website-import" target="_blank" rel="noreferrer">Import z webu<\/a>/g, '<a href="/admin-login" target="_blank" rel="noreferrer">Admin</a>')
     .replace(/\n\s*loadProfile\(\);\s*\n\s*<\/script>/, `${demoScenarioScript}\n  </script>`);
 
   return Buffer.from(html, 'utf8');
@@ -175,6 +186,10 @@ export async function staticRoute(app: FastifyInstance): Promise<void> {
       return reply.code(401).send({ ok: false, error: 'invalid_password', message: 'Chybné administrátorské heslo.' });
     }
     setAdminCookie(reply);
+    return { ok: true };
+  });
+  app.post('/api/admin/logout', async (_request, reply) => {
+    clearAdminCookie(reply);
     return { ok: true };
   });
 

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Test voice webhooku — Prague AI Voice</title>
+  <style>
+    :root { --bg:#f4f7fb; --panel:#fff; --text:#122033; --muted:#64748b; --border:#dbe3ee; --primary:#2563eb; --good:#047857; --warn:#b45309; --bad:#b91c1c; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter, Segoe UI, Arial, sans-serif; color:var(--text); background:linear-gradient(180deg,#f8fbff,var(--bg)); line-height:1.5; }
+    main { max-width:1100px; margin:0 auto; padding:28px; }
+    .topnav a { color:#1d4ed8; text-decoration:none; font-weight:900; margin-right:14px; }
+    .hero,.panel { background:var(--panel); border:1px solid var(--border); border-radius:22px; padding:20px; margin:0 0 18px; box-shadow:0 14px 35px rgba(15,23,42,.06); }
+    h1,h2,h3 { margin:0 0 10px; letter-spacing:-.02em; }
+    p { color:var(--muted); }
+    .badge { display:inline-flex; padding:4px 10px; border-radius:999px; background:#dcfce7; color:#047857; font-weight:900; font-size:13px; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+    label { display:block; font-weight:900; margin:10px 0 5px; }
+    input,textarea,select { width:100%; border:1px solid var(--border); border-radius:14px; padding:11px 12px; font:inherit; background:#fff; }
+    button, .btn { border:0; border-radius:14px; padding:11px 15px; font:inherit; font-weight:900; color:#fff; background:var(--primary); cursor:pointer; margin:8px 8px 0 0; text-decoration:none; display:inline-flex; }
+    .btn.secondary, button.secondary { color:#0f172a; background:#e8eef8; }
+    pre { white-space:pre-wrap; background:#0f172a; color:#e5eefc; border-radius:16px; padding:15px; overflow:auto; }
+    .ok { color:var(--good); font-weight:900; }
+    .warn { color:var(--warn); font-weight:900; }
+    .bad { color:var(--bad); font-weight:900; }
+    @media (max-width:900px){ main{padding:16px}.grid{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="topnav">
+      <a href="/call-leads">Zmeškané hovory</a>
+      <a href="/production-checklist">Produkční kontrola</a>
+      <a href="/phone-connection">Telefonní napojení</a>
+      <a href="/admin-login">Admin</a>
+    </div>
+
+    <section class="hero">
+      <span class="badge">3.7.0 — Voice Webhook Test</span>
+      <h1>Test zabezpečeného voice webhooku</h1>
+      <p>Stránka pro ověření, že webhook přijímá požadavky jen s platným tokenem a že se lead uloží do databáze.</p>
+      <button id="loadStatusBtn">Načíst stav systému</button>
+      <a class="btn secondary" href="/api/system/status" target="_blank" rel="noreferrer">JSON status</a>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Stav</h2>
+        <p id="statusBox">Nenačteno</p>
+      </div>
+      <div class="panel">
+        <h2>Očekávané chování</h2>
+        <p><b>S tokenem:</b> webhook vrátí <span class="ok">201</span> a uloží lead.</p>
+        <p><b>Bez tokenu:</b> pokud je token nastavený v Renderu, webhook musí vrátit <span class="bad">401</span>.</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Generátor curl testu</h2>
+      <div class="grid">
+        <div>
+          <label for="baseUrl">Render URL</label>
+          <input id="baseUrl" placeholder="https://prague-ai-voice.onrender.com" />
+        </div>
+        <div>
+          <label for="token">VOICE_GATEWAY_TOKEN</label>
+          <input id="token" placeholder="pav_voice_..." />
+        </div>
+      </div>
+      <label for="customerName">Jméno testu</label>
+      <input id="customerName" value="Test zabezpečený webhook" />
+      <label for="message">Zpráva</label>
+      <textarea id="message" rows="3">Test zajištěného voice webhooku s tokenem.</textarea>
+      <button id="withTokenBtn">Curl s tokenem</button>
+      <button id="withoutTokenBtn" class="secondary">Curl bez tokenu</button>
+      <pre id="curlBox"></pre>
+    </section>
+
+    <section class="panel">
+      <h2>Rychlé ověření po testu</h2>
+      <ol>
+        <li>Spusť curl s tokenem v terminálu.</li>
+        <li>Otevři <b>/call-leads</b>.</li>
+        <li>Najdi lead podle jména testu.</li>
+        <li>Spusť curl bez tokenu. Pokud je token nastavený, musí být odmítnut.</li>
+      </ol>
+    </section>
+  </main>
+
+  <script>
+    const statusBox = document.getElementById('statusBox');
+    const curlBox = document.getElementById('curlBox');
+    const baseUrlInput = document.getElementById('baseUrl');
+    const tokenInput = document.getElementById('token');
+    baseUrlInput.value = location.origin;
+
+    async function loadStatus() {
+      try {
+        const response = await fetch('/api/system/status');
+        const data = await response.json();
+        statusBox.innerHTML = `Verze: <b>${data.version}</b><br>` +
+          `Token nastaven: ${data.voiceGatewayTokenConfigured ? '<span class="ok">ano</span>' : '<span class="warn">ne</span>'}<br>` +
+          `Webhook: <b>${data.voiceGatewayWebhook}</b><br>` +
+          `Úložiště: <b>${data.storage}</b><br>` +
+          `E-mail: ${data.emailConfigured ? '<span class="ok">aktivní</span>' : '<span class="warn">vypnuto</span>'}`;
+      } catch (error) {
+        statusBox.innerHTML = `<span class="bad">Status nelze načíst: ${error.message}</span>`;
+      }
+    }
+
+    function makeCurl(useToken) {
+      const base = (baseUrlInput.value.trim() || location.origin).replace(/\/$/, '');
+      const token = tokenInput.value.trim();
+      const auth = useToken ? ` \\\n  -H "Authorization: Bearer ${token || 'TVOJ_VOICE_GATEWAY_TOKEN'}"` : '';
+      curlBox.textContent = `curl -X POST "${base}/api/voice/missed-call" \\\n  -H "Content-Type: application/json"${auth} \\\n  -d '{
+    "customerPhone": "+420777111222",
+    "customerName": "${document.getElementById('customerName').value.replaceAll('"', '\\"')}",
+    "serviceName": "Telefonický dotaz",
+    "message": "${document.getElementById('message').value.replaceAll('"', '\\"')}",
+    "source": "voice_gateway_test"
+  }'`;
+    }
+
+    document.getElementById('loadStatusBtn').onclick = loadStatus;
+    document.getElementById('withTokenBtn').onclick = () => makeCurl(true);
+    document.getElementById('withoutTokenBtn').onclick = () => makeCurl(false);
+    loadStatus();
+    makeCurl(true);
+  </script>
+</body>
+</html>

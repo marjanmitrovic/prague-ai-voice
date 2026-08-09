@@ -16,12 +16,31 @@ export type CallLeadEmailInput = {
 export type CallLeadEmailResult = {
   sent: boolean;
   skipped: boolean;
+  provider?: 'brevo' | 'smtp';
   reason?: string;
   messageId?: string;
 };
 
 function smtpConfigured(): boolean {
   return Boolean(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS && env.BUSINESS_OWNER_EMAIL);
+}
+
+function brevoConfigured(): boolean {
+  return Boolean(env.BREVO_API_KEY && env.BREVO_SENDER_EMAIL && env.BUSINESS_OWNER_EMAIL);
+}
+
+export function callLeadEmailConfigured(): boolean {
+  if (env.EMAIL_PROVIDER === 'brevo') return brevoConfigured();
+  if (env.EMAIL_PROVIDER === 'smtp') return smtpConfigured();
+  return brevoConfigured() || smtpConfigured();
+}
+
+function selectedProvider(): 'brevo' | 'smtp' | null {
+  if (env.EMAIL_PROVIDER === 'brevo') return brevoConfigured() ? 'brevo' : null;
+  if (env.EMAIL_PROVIDER === 'smtp') return smtpConfigured() ? 'smtp' : null;
+  if (brevoConfigured()) return 'brevo';
+  if (smtpConfigured()) return 'smtp';
+  return null;
 }
 
 function escapeHtml(input: string): string {
@@ -81,11 +100,41 @@ function html(input: CallLeadEmailInput): string {
   `;
 }
 
-export async function sendCallLeadEmail(input: CallLeadEmailInput): Promise<CallLeadEmailResult> {
-  if (!smtpConfigured()) {
-    return { sent: false, skipped: true, reason: 'smtp_not_configured' };
+function subject(input: CallLeadEmailInput): string {
+  return `Nový zmeškaný hovor: ${input.customerName} — ${input.serviceName}`;
+}
+
+async function sendViaBrevo(input: CallLeadEmailInput): Promise<CallLeadEmailResult> {
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      accept: 'application/json',
+      'api-key': env.BREVO_API_KEY || '',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      sender: {
+        name: env.BREVO_SENDER_NAME || 'Prague AI Voice',
+        email: env.BREVO_SENDER_EMAIL,
+      },
+      to: [{ email: env.BUSINESS_OWNER_EMAIL }],
+      subject: subject(input),
+      textContent: plainText(input),
+      htmlContent: html(input),
+      tags: ['call-lead', 'missed-call'],
+    }),
+  });
+
+  const data = await response.json().catch(() => ({})) as { messageId?: string; message?: string; code?: string };
+  if (!response.ok) {
+    const detail = data.message || data.code || `brevo_http_${response.status}`;
+    throw new Error(detail);
   }
 
+  return { sent: true, skipped: false, provider: 'brevo', messageId: data.messageId };
+}
+
+async function sendViaSmtp(input: CallLeadEmailInput): Promise<CallLeadEmailResult> {
   const transporter = nodemailer.createTransport({
     host: env.SMTP_HOST,
     port: env.SMTP_PORT,
@@ -99,10 +148,20 @@ export async function sendCallLeadEmail(input: CallLeadEmailInput): Promise<Call
   const info = await transporter.sendMail({
     from: env.SMTP_FROM || env.SMTP_USER,
     to: env.BUSINESS_OWNER_EMAIL,
-    subject: `Nový zmeškaný hovor: ${input.customerName} — ${input.serviceName}`,
+    subject: subject(input),
     text: plainText(input),
     html: html(input),
   });
 
-  return { sent: true, skipped: false, messageId: info.messageId };
+  return { sent: true, skipped: false, provider: 'smtp', messageId: info.messageId };
+}
+
+export async function sendCallLeadEmail(input: CallLeadEmailInput): Promise<CallLeadEmailResult> {
+  const provider = selectedProvider();
+  if (!provider) {
+    return { sent: false, skipped: true, reason: 'email_api_or_smtp_not_configured' };
+  }
+
+  if (provider === 'brevo') return sendViaBrevo(input);
+  return sendViaSmtp(input);
 }

@@ -1,9 +1,9 @@
 {
   "name": "prague-ai-voice",
-  "version": "3.6.0",
+  "version": "3.7.0",
   "private": true,
   "type": "module",
-  "description": "Prague AI Voice - čistejší veřejná navigace, admin odhlášení, Brevo email API a voice webhook pro prodejní MVP",
+  "description": "Prague AI Voice - chráněná testovací stránka pro voice webhook token, Brevo email API a prodejní MVP",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",

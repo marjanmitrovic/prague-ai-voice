@@ -86,7 +86,7 @@ function setAdminCookie(reply: FastifyReply): void {
 
 function redirectToAdminLogin(request: FastifyRequest, reply: FastifyReply): FastifyReply {
   const next = encodeURIComponent(request.url || '/call-leads');
-  return reply.redirect(302, `/admin-login?next=${next}`);
+  return reply.redirect(`/admin-login?next=${next}`, 302);
 }
 
 function applyRuntimeHtmlFixes(relativePath: string, file: Buffer): Buffer {

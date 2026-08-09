@@ -1,9 +1,9 @@
 {
   "name": "prague-ai-voice",
-  "version": "3.8.0",
+  "version": "3.9.0",
   "private": true,
   "type": "module",
-  "description": "Prague AI Voice - admin dashboard, voice webhook test, Brevo email API a prodejní MVP bez placeného LLM",
+  "description": "Prague AI Voice - klientský onboarding balíček, admin dashboard, Brevo email API a voice webhook pro prodejní MVP",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",

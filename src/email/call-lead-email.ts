@@ -131,7 +131,9 @@ async function sendViaBrevo(input: CallLeadEmailInput): Promise<CallLeadEmailRes
     throw new Error(detail);
   }
 
-  return { sent: true, skipped: false, provider: 'brevo', messageId: data.messageId };
+  const result: CallLeadEmailResult = { sent: true, skipped: false, provider: 'brevo' };
+  if (data.messageId) result.messageId = data.messageId;
+  return result;
 }
 
 async function sendViaSmtp(input: CallLeadEmailInput): Promise<CallLeadEmailResult> {

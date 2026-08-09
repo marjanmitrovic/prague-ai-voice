@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Klientský onboarding balíček — Prague AI Voice</title>
+  <style>
+    :root { --bg:#f4f7fb; --panel:#fff; --text:#122033; --muted:#64748b; --border:#dbe3ee; --primary:#2563eb; --good:#047857; --warn:#b45309; --bad:#b91c1c; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter, Segoe UI, Arial, sans-serif; color:var(--text); background:linear-gradient(180deg,#f8fbff,var(--bg)); line-height:1.5; }
+    main { max-width:1180px; margin:0 auto; padding:28px; }
+    .topnav a { color:#1d4ed8; text-decoration:none; font-weight:900; margin-right:14px; }
+    .hero,.panel { background:var(--panel); border:1px solid var(--border); border-radius:22px; padding:20px; margin:0 0 18px; box-shadow:0 14px 35px rgba(15,23,42,.06); }
+    h1,h2,h3 { margin:0 0 10px; letter-spacing:-.02em; }
+    p { color:var(--muted); }
+    .badge { display:inline-flex; padding:4px 10px; border-radius:999px; background:#dcfce7; color:#047857; font-weight:900; font-size:13px; }
+    .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+    .two { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; }
+    .card { border:1px solid var(--border); border-radius:18px; padding:16px; background:#fff; }
+    .ok { color:var(--good); font-weight:900; }
+    .warn { color:var(--warn); font-weight:900; }
+    .bad { color:var(--bad); font-weight:900; }
+    button, .btn { border:0; border-radius:14px; padding:11px 15px; font:inherit; font-weight:900; color:#fff; background:var(--primary); cursor:pointer; margin:8px 8px 0 0; text-decoration:none; display:inline-flex; }
+    .btn.secondary, button.secondary { color:#0f172a; background:#e8eef8; }
+    textarea,input,select { width:100%; border:1px solid var(--border); border-radius:14px; padding:11px 12px; font:inherit; background:#fff; }
+    label { display:block; font-weight:900; margin:10px 0 5px; }
+    ul { margin:10px 0 0; padding-left:20px; }
+    li { margin:6px 0; }
+    pre { white-space:pre-wrap; background:#0f172a; color:#e5eefc; border-radius:16px; padding:15px; overflow:auto; }
+    .pill { display:inline-flex; padding:4px 9px; border-radius:999px; background:#eef6ff; color:#1d4ed8; font-weight:900; font-size:12px; }
+    @media print { .topnav,button,.btn,.form-panel { display:none !important; } body { background:white; } main { padding:0; } .hero,.panel,.card { box-shadow:none; break-inside:avoid; } }
+    @media (max-width:900px){ main{padding:16px}.grid,.two{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="topnav">
+      <a href="/admin">Admin dashboard</a>
+      <a href="/production-checklist">Produkční kontrola</a>
+      <a href="/call-leads">Zmeškané hovory</a>
+      <a href="/voice-webhook-test">Voice test</a>
+    </div>
+
+    <section class="hero">
+      <span class="badge">3.9.0 — Klientský onboarding balíček</span>
+      <h1>Onboarding nového klienta</h1>
+      <p>Praktický balíček pro první schůzku, sběr dat, nastavení systému a závěrečný test před spuštěním.</p>
+      <button onclick="window.print()">Tisk / PDF</button>
+      <button class="secondary" id="makeBriefBtn">Vygenerovat stručný plán</button>
+    </section>
+
+    <section class="grid">
+      <div class="card"><h3>1. Data od klienta</h3><p>Bez těchto údajů nelze správně nastavit asistenta.</p><ul><li>Název firmy a obor</li><li>Adresa a pracovní doba</li><li>Služby, ceny a délka trvání</li><li>Telefon, e-mail, web</li><li>Pravidla rezervací a storna</li></ul></div>
+      <div class="card"><h3>2. Nastavení systému</h3><p>Co nastavuje administrátor.</p><ul><li>Firemní profil</li><li>FAQ a znalostní báze</li><li>Rezervační stránka</li><li>Brevo e-mail notifikace</li><li>Voice webhook token</li></ul></div>
+      <div class="card"><h3>3. Závěrečný test</h3><p>Co musí projít před předáním.</p><ul><li>Textový asistent odpovídá správně</li><li>Rezervace se uloží</li><li>Zmeškaný hovor vytvoří lead</li><li>E-mail přes Brevo dorazí</li><li>Admin stránky jsou chráněné</li></ul></div>
+    </section>
+
+    <section class="two">
+      <div class="panel form-panel">
+        <h2>Rychlý formulář klienta</h2>
+        <label for="companyName">Název firmy</label>
+        <input id="companyName" placeholder="např. Studio Aurora Praha" />
+        <label for="industry">Obor</label>
+        <select id="industry"><option>Kosmetický salon</option><option>Barber shop</option><option>Restaurace</option><option>Soukromá ordinace</option><option>Autoservis</option><option>Realitní kancelář</option><option>Jiné</option></select>
+        <label for="contact">Kontakt pro majitele</label>
+        <input id="contact" placeholder="telefon / e-mail" />
+        <label for="services">Služby</label>
+        <textarea id="services" rows="4" placeholder="Služba — cena — délka"></textarea>
+        <label for="rules">Pravidla</label>
+        <textarea id="rules" rows="4" placeholder="rezervace, storno, pracovní doba, omezení"></textarea>
+      </div>
+      <div class="panel">
+        <h2>Stručný plán předání</h2>
+        <pre id="briefBox">Vyplň formulář vlevo a klikni na „Vygenerovat stručný plán“.</pre>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Checklist před předáním klientovi</h2>
+      <ul>
+        <li><span class="pill">/admin</span> funguje po přihlášení.</li>
+        <li><span class="pill">/call-leads</span> ukazuje nové leady ze zmeškaných hovorů.</li>
+        <li><span class="pill">/voice-webhook-test</span> potvrdí test s tokenem i odmítnutí bez tokenu.</li>
+        <li><span class="pill">/booking</span> vytvoří testovací rezervaci.</li>
+        <li><span class="pill">/unknown-questions</span> je prázdné nebo otázky jsou převedené do FAQ.</li>
+        <li><span class="pill">/production-checklist</span> ukazuje databázi, e-mail a admin ochranu jako OK.</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>Text pro klienta</h2>
+      <pre>Nasadili jsme jednoduchého AI asistenta pro zachycení poptávek, rezervací a zmeškaných hovorů. Pokud zákazník zavolá mimo pracovní dobu nebo se nedovolá, požadavek se uloží do administrace a přijde upozornění e-mailem. Majitel pak vidí telefon, zprávu, status a může zákazníkovi zavolat zpět.</pre>
+    </section>
+  </main>
+
+  <script>
+    function val(id) { return document.getElementById(id).value.trim(); }
+    function makeBrief() {
+      const company = val('companyName') || 'Nový klient';
+      const industry = val('industry') || 'Obor neuveden';
+      const contact = val('contact') || 'Kontakt neuveden';
+      const services = val('services') || 'Služby doplnit';
+      const rules = val('rules') || 'Pravidla doplnit';
+      document.getElementById('briefBox').textContent = [
+        `Klient: ${company}`,
+        `Obor: ${industry}`,
+        `Kontakt: ${contact}`,
+        '',
+        'Služby:',
+        services,
+        '',
+        'Pravidla:',
+        rules,
+        '',
+        'Další kroky:',
+        '1. Vytvořit / upravit firemní profil.',
+        '2. Doplnit FAQ a typické otázky zákazníků.',
+        '3. Otestovat rezervaci a zmeškaný hovor.',
+        '4. Ověřit Brevo e-mail notifikaci.',
+        '5. Předat klientovi admin přístup a krátké instrukce.'
+      ].join('\n');
+    }
+    document.getElementById('makeBriefBtn').onclick = makeBrief;
+  </script>
+</body>
+</html>

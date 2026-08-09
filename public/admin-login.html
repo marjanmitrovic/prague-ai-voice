@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin přihlášení — Prague AI Voice</title>
+  <style>
+    :root { --bg:#f4f7fb; --panel:#fff; --text:#122033; --muted:#64748b; --border:#dbe3ee; --primary:#2563eb; --bad:#b91c1c; --good:#047857; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; display:grid; place-items:center; font-family:Inter, Segoe UI, Arial, sans-serif; color:var(--text); background:linear-gradient(180deg,#f8fbff,var(--bg)); }
+    main { width:min(94vw,460px); background:var(--panel); border:1px solid var(--border); border-radius:24px; padding:24px; box-shadow:0 18px 50px rgba(15,23,42,.08); }
+    .badge { display:inline-flex; padding:5px 10px; border-radius:999px; background:#e8eef8; color:#1d4ed8; font-weight:900; font-size:13px; }
+    h1 { margin:12px 0 8px; letter-spacing:-.03em; }
+    p { color:var(--muted); line-height:1.5; }
+    label { display:block; font-weight:900; margin:14px 0 6px; }
+    input { width:100%; border:1px solid var(--border); border-radius:14px; padding:12px; font:inherit; }
+    button { width:100%; border:0; border-radius:14px; padding:12px 15px; font:inherit; font-weight:900; color:#fff; background:var(--primary); cursor:pointer; margin-top:14px; }
+    .msg { min-height:24px; margin-top:12px; font-weight:800; }
+    .bad { color:var(--bad); }
+    .good { color:var(--good); }
+    a { color:#1d4ed8; font-weight:800; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <main>
+    <span class="badge">Admin zóna</span>
+    <h1>Přihlášení</h1>
+    <p>Zadejte administrátorské heslo. Používá se hodnota <b>ADMIN_PASSWORD</b> z Render Environment.</p>
+    <form id="loginForm">
+      <label for="password">ADMIN_PASSWORD</label>
+      <input id="password" type="password" autocomplete="current-password" required autofocus />
+      <button type="submit">Přihlásit</button>
+    </form>
+    <div class="msg" id="msg"></div>
+    <p><a href="/">Zpět na hlavní stránku</a></p>
+  </main>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const next = params.get('next') || '/call-leads';
+    const form = document.getElementById('loginForm');
+    const msg = document.getElementById('msg');
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      msg.textContent = 'Ověřuji heslo...';
+      msg.className = 'msg';
+      try {
+        const response = await fetch('/api/admin/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: document.getElementById('password').value })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.message || 'Přihlášení se nezdařilo');
+        msg.textContent = 'Přihlášeno. Přesměrovávám...';
+        msg.className = 'msg good';
+        location.href = next.startsWith('/') ? next : '/call-leads';
+      } catch (error) {
+        msg.textContent = error.message || 'Chybné heslo';
+        msg.className = 'msg bad';
+      }
+    });
+  </script>
+</body>
+</html>

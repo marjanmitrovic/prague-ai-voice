@@ -32,11 +32,12 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
     const smtpConfigured = emailConfigured();
     const callLeadMailConfigured = callLeadEmailConfigured();
     const voiceGatewayTokenConfigured = Boolean(env.VOICE_GATEWAY_TOKEN);
+    const adminPasswordConfigured = Boolean(env.ADMIN_PASSWORD && env.ADMIN_PASSWORD.length >= 8);
 
     return {
       ok: true,
-      version: '3.4.0',
-      mode: 'email-api-notification-no-paid-llm',
+      version: '3.5.0',
+      mode: 'admin-protected-email-api-no-paid-llm',
       storage: storageInfo.mode,
       databaseUrlConfigured: storageInfo.databaseUrlConfigured,
       telephony: 'voice-gateway-webhook-ready',
@@ -47,6 +48,10 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
       brevoApiConfigured: Boolean(env.BREVO_API_KEY && env.BREVO_SENDER_EMAIL && env.BUSINESS_OWNER_EMAIL),
       smtpConfigured,
       emailConfigured: callLeadMailConfigured,
+      adminPasswordConfigured,
+      adminStaticPagesProtected: adminPasswordConfigured,
+      publicPages: ['/', '/sales', '/booking', '/demo-scenarios', '/sales-presentation', '/phone-connection'],
+      protectedPages: ['/call-leads', '/production-checklist', '/unknown-questions', '/website-import', '/weaknesses', '/clients', '/onboarding', '/tts-test'],
       businessSlug,
       businessesCount: businesses.length,
       businesses,
@@ -61,7 +66,8 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
         availability: true,
         conversationalBooking: true,
         czechTts: true,
-        adminLogin: true,
+        adminLogin: adminPasswordConfigured,
+        adminStaticPagesProtected: adminPasswordConfigured,
         emailConfirmation: callLeadMailConfigured,
         multiBusiness: true,
         salesLanding: true,

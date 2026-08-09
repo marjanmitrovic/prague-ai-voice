@@ -5,6 +5,7 @@ import { requireAdmin } from '../auth.js';
 import { getBusinessProfile, listPublicBusinesses, publicBusinessProfile, reloadBusinessProfile } from '../business/business-profile.js';
 import { listBookings } from '../business/bookings.js';
 import { env } from '../config/env.js';
+import { callLeadEmailConfigured } from '../email/call-lead-email.js';
 import { DEFAULT_BUSINESS_SLUG, getStorageInfo, resetDemoDataFromJsonSeed, safeBusinessSlug } from '../storage-postgres.js';
 import { emailConfigured } from '../email.js';
 
@@ -28,20 +29,24 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
     const bookings = listBookings(businessSlug);
     const businesses = listPublicBusinesses();
     const storageInfo = getStorageInfo();
-    const mailConfigured = emailConfigured();
+    const smtpConfigured = emailConfigured();
+    const callLeadMailConfigured = callLeadEmailConfigured();
     const voiceGatewayTokenConfigured = Boolean(env.VOICE_GATEWAY_TOKEN);
 
     return {
       ok: true,
-      version: '3.3.0',
-      mode: 'production-polish-no-paid-llm',
+      version: '3.4.0',
+      mode: 'email-api-notification-no-paid-llm',
       storage: storageInfo.mode,
       databaseUrlConfigured: storageInfo.databaseUrlConfigured,
       telephony: 'voice-gateway-webhook-ready',
       voiceGatewayWebhook: '/api/voice/missed-call',
       voiceGatewayTokenConfigured,
       paidApis: 'disabled',
-      emailConfigured: mailConfigured,
+      emailProvider: env.EMAIL_PROVIDER,
+      brevoApiConfigured: Boolean(env.BREVO_API_KEY && env.BREVO_SENDER_EMAIL && env.BUSINESS_OWNER_EMAIL),
+      smtpConfigured,
+      emailConfigured: callLeadMailConfigured,
       businessSlug,
       businessesCount: businesses.length,
       businesses,
@@ -57,7 +62,7 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
         conversationalBooking: true,
         czechTts: true,
         adminLogin: true,
-        emailConfirmation: mailConfigured,
+        emailConfirmation: callLeadMailConfigured,
         multiBusiness: true,
         salesLanding: true,
         clientOnboarding: true,
@@ -65,7 +70,9 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
         knowledgeBase: true,
         weaknessSimulator: true,
         callLeadCapture: true,
-        callLeadEmail: mailConfigured,
+        callLeadEmail: callLeadMailConfigured,
+        emailApi: Boolean(env.BREVO_API_KEY && env.BREVO_SENDER_EMAIL && env.BUSINESS_OWNER_EMAIL),
+        smtp: smtpConfigured,
         voiceGatewayWebhook: true,
         voiceGatewayToken: voiceGatewayTokenConfigured,
       },

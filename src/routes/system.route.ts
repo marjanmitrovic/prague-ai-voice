@@ -36,13 +36,15 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
 
     return {
       ok: true,
-      version: '3.6.0',
-      mode: 'admin-protected-clean-public-navigation-no-paid-llm',
+      version: '3.7.0',
+      mode: 'voice-token-test-admin-protected-no-paid-llm',
       storage: storageInfo.mode,
       databaseUrlConfigured: storageInfo.databaseUrlConfigured,
       telephony: 'voice-gateway-webhook-ready',
       voiceGatewayWebhook: '/api/voice/missed-call',
+      voiceWebhookTestPage: '/voice-webhook-test',
       voiceGatewayTokenConfigured,
+      voiceGatewayTokenRequired: voiceGatewayTokenConfigured,
       paidApis: 'disabled',
       emailProvider: env.EMAIL_PROVIDER,
       brevoApiConfigured: Boolean(env.BREVO_API_KEY && env.BREVO_SENDER_EMAIL && env.BUSINESS_OWNER_EMAIL),
@@ -53,7 +55,7 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
       adminLogoutEndpoint: '/api/admin/logout',
       publicNavigationCleaned: true,
       publicPages: ['/', '/sales', '/booking', '/demo-scenarios', '/sales-presentation', '/phone-connection'],
-      protectedPages: ['/call-leads', '/production-checklist', '/unknown-questions', '/website-import', '/weaknesses', '/clients', '/onboarding', '/tts-test'],
+      protectedPages: ['/call-leads', '/production-checklist', '/voice-webhook-test', '/unknown-questions', '/website-import', '/weaknesses', '/clients', '/onboarding', '/tts-test'],
       businessSlug,
       businessesCount: businesses.length,
       businesses,
@@ -85,6 +87,8 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
         smtp: smtpConfigured,
         voiceGatewayWebhook: true,
         voiceGatewayToken: voiceGatewayTokenConfigured,
+        voiceGatewayTokenRequired: voiceGatewayTokenConfigured,
+        voiceWebhookTestPage: true,
       },
     };
   });

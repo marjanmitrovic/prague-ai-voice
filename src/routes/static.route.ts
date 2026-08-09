@@ -5,7 +5,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { env } from '../config/env.js';
 
 const publicDir = path.resolve(process.cwd(), 'public');
-const APP_VERSION = '3.6.0';
+const APP_VERSION = '3.7.0';
 const ADMIN_COOKIE_NAME = 'pav_admin_session';
 const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
 
@@ -132,6 +132,7 @@ function applyRuntimeHtmlFixes(relativePath: string, file: Buffer): Buffer {
     .replace(/3\.3\.0/g, APP_VERSION)
     .replace(/3\.4\.0/g, APP_VERSION)
     .replace(/3\.5\.0/g, APP_VERSION)
+    .replace(/3\.6\.0/g, APP_VERSION)
     .replace(/Jedno pitanje po řádku\./g, 'Jedna otázka na řádek.')
     .replace(/<a href="#demoVoice">Test českého hlasu<\/a>/g, '<a href="#demoVoice">Test českého hlasu</a>\n        <a href="/demo-scenarios" target="_blank" rel="noreferrer">Demo scénáře</a>\n        <a href="/sales-presentation" target="_blank" rel="noreferrer">Prodejní prezentace</a>\n        <a href="/phone-connection" target="_blank" rel="noreferrer">Telefonní napojení</a>\n        <a href="/admin-login" target="_blank" rel="noreferrer">Admin</a>')
     .replace(/<a href="\/website-import" target="_blank" rel="noreferrer">Import z webu<\/a>/g, '<a href="/admin-login" target="_blank" rel="noreferrer">Admin</a>')
@@ -192,6 +193,10 @@ export async function staticRoute(app: FastifyInstance): Promise<void> {
     clearAdminCookie(reply);
     return { ok: true };
   });
+
+  app.get('/voice-webhook-test', async (request, reply) => sendAdminFile(request, reply, 'voice-webhook-test.html'));
+  app.get('/admin/voice-webhook-test', async (request, reply) => sendAdminFile(request, reply, 'voice-webhook-test.html'));
+  app.get('/voice-test', async (request, reply) => sendAdminFile(request, reply, 'voice-webhook-test.html'));
 
   app.get('/production-checklist', async (request, reply) => sendAdminFile(request, reply, 'production-checklist.html'));
   app.get('/admin/production-checklist', async (request, reply) => sendAdminFile(request, reply, 'production-checklist.html'));

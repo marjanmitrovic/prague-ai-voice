@@ -5,7 +5,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { env } from '../config/env.js';
 
 const publicDir = path.resolve(process.cwd(), 'public');
-const APP_VERSION = '3.7.0';
+const APP_VERSION = '3.8.0';
 const ADMIN_COOKIE_NAME = 'pav_admin_session';
 const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
 
@@ -26,9 +26,7 @@ const contentTypes: Record<string, string> = {
 function safePublicPath(relativePath: string): string | null {
   const normalized = path.normalize(relativePath).replace(/^([/\\])+/, '');
   const absolutePath = path.resolve(publicDir, normalized);
-  if (!absolutePath.startsWith(publicDir + path.sep) && absolutePath !== publicDir) {
-    return null;
-  }
+  if (!absolutePath.startsWith(publicDir + path.sep) && absolutePath !== publicDir) return null;
   return absolutePath;
 }
 
@@ -88,19 +86,19 @@ function setAdminCookie(reply: FastifyReply): void {
 }
 
 function clearAdminCookie(reply: FastifyReply): void {
-  reply.header(
-    'Set-Cookie',
-    `${ADMIN_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${cookieSecureSuffix()}`,
-  );
+  reply.header('Set-Cookie', `${ADMIN_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${cookieSecureSuffix()}`);
 }
 
 function redirectToAdminLogin(request: FastifyRequest, reply: FastifyReply): FastifyReply {
-  const next = encodeURIComponent(request.url || '/call-leads');
+  const next = encodeURIComponent(request.url || '/admin');
   return reply.redirect(`/admin-login?next=${next}`, 302);
 }
 
 function applyRuntimeHtmlFixes(relativePath: string, file: Buffer): Buffer {
-  if (relativePath !== 'index.html') return file;
+  const html = file.toString('utf8')
+    .replace(/2\.1\.4|2\.1\.5|2\.1\.6|2\.2\.0|2\.2\.1|2\.3\.0|2\.3\.1|2\.4\.0|2\.5\.0|2\.5\.1|2\.6\.0|2\.7\.0|2\.8\.0|3\.0\.0|3\.1\.0|3\.2\.0|3\.3\.0|3\.4\.0|3\.5\.0|3\.6\.0|3\.7\.0/g, APP_VERSION);
+
+  if (relativePath !== 'index.html') return Buffer.from(html, 'utf8');
 
   const demoScenarioScript = `
     const storedDemoQuestions = sessionStorage.getItem('pragueAiVoiceDemoQuestions');
@@ -112,47 +110,24 @@ function applyRuntimeHtmlFixes(relativePath: string, file: Buffer): Buffer {
 
     loadProfile();`;
 
-  const html = file.toString('utf8')
-    .replace(/2\.1\.4/g, APP_VERSION)
-    .replace(/2\.1\.5/g, APP_VERSION)
-    .replace(/2\.1\.6/g, APP_VERSION)
-    .replace(/2\.2\.0/g, APP_VERSION)
-    .replace(/2\.2\.1/g, APP_VERSION)
-    .replace(/2\.3\.0/g, APP_VERSION)
-    .replace(/2\.3\.1/g, APP_VERSION)
-    .replace(/2\.4\.0/g, APP_VERSION)
-    .replace(/2\.5\.0/g, APP_VERSION)
-    .replace(/2\.5\.1/g, APP_VERSION)
-    .replace(/2\.6\.0/g, APP_VERSION)
-    .replace(/2\.7\.0/g, APP_VERSION)
-    .replace(/2\.8\.0/g, APP_VERSION)
-    .replace(/3\.0\.0/g, APP_VERSION)
-    .replace(/3\.1\.0/g, APP_VERSION)
-    .replace(/3\.2\.0/g, APP_VERSION)
-    .replace(/3\.3\.0/g, APP_VERSION)
-    .replace(/3\.4\.0/g, APP_VERSION)
-    .replace(/3\.5\.0/g, APP_VERSION)
-    .replace(/3\.6\.0/g, APP_VERSION)
+  const fixed = html
     .replace(/Jedno pitanje po řádku\./g, 'Jedna otázka na řádek.')
-    .replace(/<a href="#demoVoice">Test českého hlasu<\/a>/g, '<a href="#demoVoice">Test českého hlasu</a>\n        <a href="/demo-scenarios" target="_blank" rel="noreferrer">Demo scénáře</a>\n        <a href="/sales-presentation" target="_blank" rel="noreferrer">Prodejní prezentace</a>\n        <a href="/phone-connection" target="_blank" rel="noreferrer">Telefonní napojení</a>\n        <a href="/admin-login" target="_blank" rel="noreferrer">Admin</a>')
-    .replace(/<a href="\/website-import" target="_blank" rel="noreferrer">Import z webu<\/a>/g, '<a href="/admin-login" target="_blank" rel="noreferrer">Admin</a>')
+    .replace(/<a href="#demoVoice">Test českého hlasu<\/a>/g, '<a href="#demoVoice">Test českého hlasu</a>\n        <a href="/demo-scenarios" target="_blank" rel="noreferrer">Demo scénáře</a>\n        <a href="/sales-presentation" target="_blank" rel="noreferrer">Prodejní prezentace</a>\n        <a href="/phone-connection" target="_blank" rel="noreferrer">Telefonní napojení</a>\n        <a href="/admin" target="_blank" rel="noreferrer">Admin</a>')
+    .replace(/<a href="\/website-import" target="_blank" rel="noreferrer">Import z webu<\/a>/g, '<a href="/admin" target="_blank" rel="noreferrer">Admin</a>')
     .replace(/\n\s*loadProfile\(\);\s*\n\s*<\/script>/, `${demoScenarioScript}\n  </script>`);
 
-  return Buffer.from(html, 'utf8');
+  return Buffer.from(fixed, 'utf8');
 }
 
 async function sendPublicFile(reply: FastifyReply, relativePath: string): Promise<FastifyReply> {
   const absolutePath = safePublicPath(relativePath);
-  if (!absolutePath) {
-    return reply.code(404).send({ error: 'not_found' });
-  }
+  if (!absolutePath) return reply.code(404).send({ error: 'not_found' });
 
   try {
     const rawFile = await readFile(absolutePath);
     const file = applyRuntimeHtmlFixes(relativePath, rawFile);
     const extension = path.extname(absolutePath).toLowerCase();
-    const type = contentTypes[extension] ?? 'application/octet-stream';
-    return reply.type(type).send(file);
+    return reply.type(contentTypes[extension] ?? 'application/octet-stream').send(file);
   } catch {
     return reply.code(404).send({ error: 'not_found' });
   }
@@ -165,7 +140,6 @@ async function sendAdminFile(request: FastifyRequest, reply: FastifyReply, relat
 
 export async function staticRoute(app: FastifyInstance): Promise<void> {
   app.get('/', async (_request, reply) => sendPublicFile(reply, 'index.html'));
-
   app.get('/sales', async (_request, reply) => sendPublicFile(reply, 'landing.html'));
   app.get('/landing', async (_request, reply) => sendPublicFile(reply, 'landing.html'));
   app.get('/cs', async (_request, reply) => sendPublicFile(reply, 'landing.html'));
@@ -173,19 +147,13 @@ export async function staticRoute(app: FastifyInstance): Promise<void> {
   app.get('/favicon.svg', async (_request, reply) => sendPublicFile(reply, 'assets/favicon.svg'));
   app.get('/favicon.png', async (_request, reply) => sendPublicFile(reply, 'assets/favicon.png'));
   app.get('/site.webmanifest', async (_request, reply) => sendPublicFile(reply, 'site.webmanifest'));
-  app.get('/assets/*', async (request: FastifyRequest<{ Params: { '*': string } }>, reply) => {
-    return sendPublicFile(reply, `assets/${request.params['*']}`);
-  });
+  app.get('/assets/*', async (request: FastifyRequest<{ Params: { '*': string } }>, reply) => sendPublicFile(reply, `assets/${request.params['*']}`));
 
   app.get('/admin-login', async (_request, reply) => sendPublicFile(reply, 'admin-login.html'));
   app.post('/api/admin/session', async (request: FastifyRequest<{ Body: { password?: string } }>, reply) => {
-    if (!adminPasswordConfigured()) {
-      return reply.code(503).send({ ok: false, error: 'admin_password_not_configured', message: 'ADMIN_PASSWORD není nastaveno.' });
-    }
+    if (!adminPasswordConfigured()) return reply.code(503).send({ ok: false, error: 'admin_password_not_configured', message: 'ADMIN_PASSWORD není nastaveno.' });
     const password = request.body?.password || '';
-    if (!safeEqual(password, env.ADMIN_PASSWORD || '')) {
-      return reply.code(401).send({ ok: false, error: 'invalid_password', message: 'Chybné administrátorské heslo.' });
-    }
+    if (!safeEqual(password, env.ADMIN_PASSWORD || '')) return reply.code(401).send({ ok: false, error: 'invalid_password', message: 'Chybné administrátorské heslo.' });
     setAdminCookie(reply);
     return { ok: true };
   });
@@ -193,6 +161,10 @@ export async function staticRoute(app: FastifyInstance): Promise<void> {
     clearAdminCookie(reply);
     return { ok: true };
   });
+
+  app.get('/admin', async (request, reply) => sendAdminFile(request, reply, 'admin.html'));
+  app.get('/dashboard', async (request, reply) => sendAdminFile(request, reply, 'admin.html'));
+  app.get('/admin-dashboard', async (request, reply) => sendAdminFile(request, reply, 'admin.html'));
 
   app.get('/voice-webhook-test', async (request, reply) => sendAdminFile(request, reply, 'voice-webhook-test.html'));
   app.get('/admin/voice-webhook-test', async (request, reply) => sendAdminFile(request, reply, 'voice-webhook-test.html'));

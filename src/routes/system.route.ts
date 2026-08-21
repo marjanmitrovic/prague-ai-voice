@@ -36,8 +36,8 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
 
     return {
       ok: true,
-      version: '3.9.0',
-      mode: 'client-onboarding-pack-admin-protected-no-paid-llm',
+      version: '4.0.0',
+      mode: 'client-profile-builder-admin-protected-no-paid-llm',
       storage: storageInfo.mode,
       databaseUrlConfigured: storageInfo.databaseUrlConfigured,
       telephony: 'voice-gateway-webhook-ready',
@@ -55,11 +55,13 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
       adminLogoutEndpoint: '/api/admin/logout',
       adminDashboard: '/admin',
       adminDashboardReady: true,
+      clientProfileBuilder: '/client-profile-builder',
+      clientProfileBuilderReady: true,
       clientOnboardingPack: '/client-onboarding-pack',
       clientOnboardingPackReady: true,
       publicNavigationCleaned: true,
       publicPages: ['/', '/sales', '/booking', '/demo-scenarios', '/sales-presentation', '/phone-connection'],
-      protectedPages: ['/admin', '/client-onboarding-pack', '/call-leads', '/production-checklist', '/voice-webhook-test', '/unknown-questions', '/website-import', '/weaknesses', '/clients', '/onboarding', '/tts-test'],
+      protectedPages: ['/admin', '/client-profile-builder', '/client-onboarding-pack', '/call-leads', '/production-checklist', '/voice-webhook-test', '/unknown-questions', '/website-import', '/weaknesses', '/clients', '/onboarding', '/tts-test'],
       businessSlug,
       businessesCount: businesses.length,
       businesses,
@@ -70,6 +72,7 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
       logsCount: countFiles(resolve(process.cwd(), 'logs')),
       checks: {
         businessProfile: true,
+        clientProfileBuilder: true,
         bookings: true,
         availability: true,
         conversationalBooking: true,

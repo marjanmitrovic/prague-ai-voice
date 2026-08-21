@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyReply } from 'fastify';
 import { requireAdmin } from '../auth.js';
 
-async function sendBuilderPage(reply: { type: (contentType: string) => typeof reply; send: (payload: string) => unknown; code: (statusCode: number) => typeof reply }) {
+async function sendBuilderPage(reply: FastifyReply): Promise<FastifyReply> {
   try {
     const filePath = path.resolve(process.cwd(), 'public', 'client-profile-builder.html');
     const html = await readFile(filePath, 'utf8');

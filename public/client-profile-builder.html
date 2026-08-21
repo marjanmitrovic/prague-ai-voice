@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Client Profile Builder — Prague AI Voice</title>
+  <style>
+    :root { --bg:#f4f7fb; --panel:#fff; --text:#122033; --muted:#64748b; --border:#dbe3ee; --primary:#2563eb; --good:#047857; --warn:#b45309; --bad:#b91c1c; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter, Segoe UI, Arial, sans-serif; color:var(--text); background:linear-gradient(180deg,#f8fbff,var(--bg)); line-height:1.5; }
+    main { max-width:1180px; margin:0 auto; padding:28px; }
+    .topnav a { color:#1d4ed8; text-decoration:none; font-weight:900; margin-right:14px; }
+    .hero,.panel { background:var(--panel); border:1px solid var(--border); border-radius:22px; padding:20px; margin:0 0 18px; box-shadow:0 14px 35px rgba(15,23,42,.06); }
+    h1,h2,h3 { margin:0 0 10px; letter-spacing:-.02em; }
+    p { color:var(--muted); }
+    .badge { display:inline-flex; padding:4px 10px; border-radius:999px; background:#dcfce7; color:#047857; font-weight:900; font-size:13px; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    label { display:block; font-weight:900; margin:10px 0 6px; }
+    input,textarea,select { width:100%; border:1px solid var(--border); border-radius:14px; padding:11px; font:inherit; background:#fff; }
+    textarea { min-height:110px; resize:vertical; }
+    button,.btn { border:0; border-radius:14px; padding:11px 15px; font:inherit; font-weight:900; color:#fff; background:var(--primary); cursor:pointer; margin:8px 8px 0 0; text-decoration:none; display:inline-flex; }
+    .btn.secondary,button.secondary { color:#0f172a; background:#e8eef8; }
+    .btn.danger,button.danger { background:#b91c1c; }
+    .hint { font-size:13px; color:var(--muted); margin-top:4px; }
+    .result { white-space:pre-wrap; background:#0f172a; color:#e2e8f0; border-radius:16px; padding:14px; overflow:auto; }
+    .ok { color:var(--good); font-weight:900; }
+    .bad { color:var(--bad); font-weight:900; }
+    .warn { color:var(--warn); font-weight:900; }
+    .links a { display:inline-flex; margin:8px 8px 0 0; color:#fff; background:#2563eb; padding:10px 14px; border-radius:12px; text-decoration:none; font-weight:900; }
+    @media (max-width:900px){ main{padding:16px}.grid{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="topnav">
+      <a href="/admin">Admin</a>
+      <a href="/clients">Klienti</a>
+      <a href="/client-onboarding-pack">Onboarding balíček</a>
+      <a href="/booking">Rezervace</a>
+    </div>
+
+    <section class="hero">
+      <span class="badge">4.0.0 — Client Profile Builder</span>
+      <h1>Vytvořit nového klienta</h1>
+      <p>Vyplň základní údaje, služby a FAQ. Stránka vytvoří nový business profil a připraví odkazy pro demo.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Základní údaje</h2>
+      <div class="grid">
+        <div>
+          <label for="companyName">Název firmy</label>
+          <input id="companyName" value="Autoservis Novák Praha" />
+        </div>
+        <div>
+          <label for="businessSlug">Slug / URL</label>
+          <input id="businessSlug" value="autoservis-novak" />
+          <div class="hint">Pouze malá písmena, čísla a pomlčky.</div>
+        </div>
+        <div>
+          <label for="businessType">Typ firmy</label>
+          <select id="businessType">
+            <option value="autoservis">Autoservis</option>
+            <option value="kosmeticky-salon">Kosmetický salon</option>
+            <option value="barber">Barber shop</option>
+            <option value="restaurace">Restaurace</option>
+            <option value="ordinace">Soukromá ordinace</option>
+            <option value="realitni-kancelar">Realitní kancelář</option>
+            <option value="obecne-sluzby">Obecné služby</option>
+          </select>
+        </div>
+        <div>
+          <label for="assistantName">Jméno asistenta</label>
+          <input id="assistantName" value="AI asistent" />
+        </div>
+        <div>
+          <label for="address">Adresa</label>
+          <input id="address" value="Praha, Česká republika" />
+        </div>
+        <div>
+          <label for="ownerEmail">Email majitele</label>
+          <input id="ownerEmail" value="info@example.cz" />
+        </div>
+        <div>
+          <label for="phone">Telefon</label>
+          <input id="phone" value="+420 777 111 222" />
+        </div>
+        <div>
+          <label for="workHours">Pracovní doba</label>
+          <input id="workHours" value="Po–Pá 08:00–17:00" />
+        </div>
+      </div>
+      <label for="description">Popis firmy</label>
+      <textarea id="description">Lokální firma v Praze. AI asistent odpovídá na běžné dotazy, pomáhá se službami a sbírá požadavky zákazníků.</textarea>
+    </section>
+
+    <section class="panel">
+      <h2>Služby</h2>
+      <p>Každý řádek: <b>Název | cena | minuty | popis</b></p>
+      <textarea id="services">Diagnostika vozu | od 800 Kč | 45 | Kontrola závad a doporučení dalšího postupu
+Výměna oleje | od 1 500 Kč | 60 | Výměna oleje a základního filtru
+Kontrola brzd | od 900 Kč | 45 | Kontrola brzdového systému a bezpečnosti</textarea>
+    </section>
+
+    <section class="panel">
+      <h2>FAQ / znalosti</h2>
+      <p>Každý blok: <b>Otázka | odpověď | klíčová slova</b></p>
+      <textarea id="faq">Kde vás najdu? | Najdete nás na adrese Praha, Česká republika. | adresa,kde,lokace
+Jak se objednat? | Stačí zanechat telefon nebo požadovaný termín a ozveme se zpět. | objednání,rezervace,termín
+Kolik stojí služby? | Ceny závisí na konkrétní službě. Orientační ceny jsou uvedené v nabídce služeb. | cena,kolik,platba</textarea>
+    </section>
+
+    <section class="panel">
+      <h2>Vytvoření profilu</h2>
+      <button id="createBtn">Vytvořit klienta</button>
+      <button class="secondary" id="previewBtn">Ukázat JSON náhled</button>
+      <div id="message"></div>
+      <div class="links" id="links"></div>
+      <pre class="result" id="result">Výsledek se zobrazí zde.</pre>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function slugify(value) {
+      return String(value || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 70) || 'novy-klient';
+    }
+
+    function parseMinutes(value) {
+      const n = Number(String(value || '').replace(/[^0-9]/g, ''));
+      return Number.isFinite(n) && n >= 5 ? Math.min(n, 480) : 30;
+    }
+
+    function parseServices() {
+      return $('services').value.split('\n').map((line) => line.trim()).filter(Boolean).map((line) => {
+        const [nameRaw, priceRaw, minutesRaw, descRaw] = line.split('|').map((p) => (p || '').trim());
+        const name = nameRaw || 'Služba';
+        const price = priceRaw || 'dle domluvy';
+        const durationMinutes = parseMinutes(minutesRaw || '30');
+        return {
+          name,
+          description: descRaw || name,
+          price,
+          spokenPrice: price,
+          duration: `${durationMinutes} minut`,
+          durationMinutes,
+          bookingEnabled: true,
+        };
+      }).slice(0, 20);
+    }
+
+    function parseFaq() {
+      return $('faq').value.split('\n').map((line) => line.trim()).filter(Boolean).map((line) => {
+        const [questionRaw, answerRaw, keywordsRaw] = line.split('|').map((p) => (p || '').trim());
+        return {
+          question: questionRaw || 'Dotaz zákazníka',
+          answer: answerRaw || 'Ozveme se vám zpět s upřesněním.',
+          keywords: (keywordsRaw || '').split(',').map((k) => k.trim()).filter(Boolean),
+        };
+      }).slice(0, 50);
+    }
+
+    function buildProfile() {
+      const slug = slugify($('businessSlug').value || $('companyName').value);
+      $('businessSlug').value = slug;
+      const companyName = $('companyName').value.trim() || 'Nový klient';
+      const address = $('address').value.trim() || 'Praha, Česká republika';
+      const phone = $('phone').value.trim();
+      const ownerEmail = $('ownerEmail').value.trim();
+      const services = parseServices();
+      const knowledgeBase = parseFaq();
+      const type = $('businessType').value;
+      const generalKeywords = [type, companyName, address, phone, ownerEmail].filter(Boolean);
+
+      return {
+        businessSlug: slug,
+        companyName,
+        assistantName: $('assistantName').value.trim() || 'AI asistent',
+        language: 'cs-CZ',
+        currency: 'Kč',
+        description: $('description').value.trim() || `AI asistent pro ${companyName}.`,
+        address,
+        openingHours: [{
+          days: 'Po–Pá',
+          hours: $('workHours').value.trim() || 'Po–Pá 08:00–17:00',
+          spoken: `Máme otevřeno ${$('workHours').value.trim() || 'po až pá od osmi do sedmnácti hodin'}.`,
+        }],
+        bookingRules: {
+          timezone: 'Europe/Prague',
+          slotMinutes: 15,
+          minNoticeMinutes: 60,
+          bufferMinutes: 0,
+          workingHours: {
+            monday: [{ start: '08:00', end: '17:00' }],
+            tuesday: [{ start: '08:00', end: '17:00' }],
+            wednesday: [{ start: '08:00', end: '17:00' }],
+            thursday: [{ start: '08:00', end: '17:00' }],
+            friday: [{ start: '08:00', end: '17:00' }],
+            saturday: [],
+            sunday: [],
+          },
+          closedDates: [],
+        },
+        services: services.length ? services : [{
+          name: 'Konzultace', description: 'Základní konzultace se zákazníkem.', price: 'dle domluvy', spokenPrice: 'dle domluvy', duration: '30 minut', durationMinutes: 30, bookingEnabled: true,
+        }],
+        messages: {
+          empty: 'Napište prosím, s čím potřebujete pomoci.',
+          bookingNotAvailable: 'Přímá rezervace teď není dostupná. Zanechte prosím telefon a ozveme se zpět.',
+          humanTransferNotAvailable: 'Předám požadavek majiteli, který se vám ozve zpět.',
+          promptInjection: 'Mohu odpovídat pouze na dotazy související s touto firmou a jejími službami.',
+          fallback: 'Na tuto otázku zatím nemám přesnou odpověď. Zanechte prosím kontakt a doplníme ji.',
+        },
+        knowledgeBase: [
+          ...knowledgeBase,
+          { question: 'Jaký je telefon?', answer: phone ? `Telefon je ${phone}.` : 'Telefon doplní majitel firmy.', keywords: ['telefon','kontakt','volat'] },
+          { question: 'Jaký je email?', answer: ownerEmail ? `Email je ${ownerEmail}.` : 'Email doplní majitel firmy.', keywords: ['email','kontakt','mail'] },
+        ],
+        vocabulary: { serviceAliases: {}, generalKeywords },
+        unknownQuestions: [],
+      };
+    }
+
+    async function createProfile() {
+      const profile = buildProfile();
+      $('message').innerHTML = '<p class="warn">Ukládám profil...</p>';
+      $('result').textContent = JSON.stringify(profile, null, 2);
+      $('links').innerHTML = '';
+      try {
+        const response = await fetch('/api/business-profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(profile),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.message || 'Profil se nepodařilo uložit.');
+        const slug = profile.businessSlug;
+        $('message').innerHTML = '<p class="ok">Klient byl vytvořen.</p>';
+        $('links').innerHTML = `
+          <a href="/booking/${slug}" target="_blank" rel="noreferrer">Booking link</a>
+          <a href="/?businessSlug=${slug}" target="_blank" rel="noreferrer">Demo asistent</a>
+          <a href="/call-leads?businessSlug=${slug}" target="_blank" rel="noreferrer">Leady klienta</a>
+        `;
+        $('result').textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        $('message').innerHTML = `<p class="bad">${error.message || 'Chyba při ukládání.'}</p>`;
+      }
+    }
+
+    $('companyName').addEventListener('input', () => { $('businessSlug').value = slugify($('companyName').value); });
+    $('previewBtn').onclick = () => { $('result').textContent = JSON.stringify(buildProfile(), null, 2); };
+    $('createBtn').onclick = createProfile;
+  </script>
+</body>
+</html>

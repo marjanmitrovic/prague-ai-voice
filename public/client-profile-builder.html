@@ -20,14 +20,18 @@
     textarea { min-height:110px; resize:vertical; }
     button,.btn { border:0; border-radius:14px; padding:11px 15px; font:inherit; font-weight:900; color:#fff; background:var(--primary); cursor:pointer; margin:8px 8px 0 0; text-decoration:none; display:inline-flex; }
     .btn.secondary,button.secondary { color:#0f172a; background:#e8eef8; }
-    .btn.danger,button.danger { background:#b91c1c; }
     .hint { font-size:13px; color:var(--muted); margin-top:4px; }
-    .result { white-space:pre-wrap; background:#0f172a; color:#e2e8f0; border-radius:16px; padding:14px; overflow:auto; }
     .ok { color:var(--good); font-weight:900; }
     .bad { color:var(--bad); font-weight:900; }
     .warn { color:var(--warn); font-weight:900; }
+    .successBox { display:none; background:#ecfdf5; border:1px solid #bbf7d0; border-radius:18px; padding:16px; margin-top:14px; }
+    .successBox h3 { color:#047857; }
+    .summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:12px 0; }
+    .summary div { background:#fff; border:1px solid #bbf7d0; border-radius:14px; padding:12px; }
+    .summary span { display:block; color:var(--muted); font-size:13px; font-weight:800; }
+    .summary b { display:block; font-size:18px; overflow-wrap:anywhere; }
     .links a { display:inline-flex; margin:8px 8px 0 0; color:#fff; background:#2563eb; padding:10px 14px; border-radius:12px; text-decoration:none; font-weight:900; }
-    @media (max-width:900px){ main{padding:16px}.grid{grid-template-columns:1fr} }
+    @media (max-width:900px){ main{padding:16px}.grid,.summary{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
@@ -40,7 +44,7 @@
     </div>
 
     <section class="hero">
-      <span class="badge">4.0.0 — Client Profile Builder</span>
+      <span class="badge">4.0.1 — Client Profile Builder</span>
       <h1>Vytvořit nového klienta</h1>
       <p>Vyplň základní údaje, služby a FAQ. Stránka vytvoří nový business profil a připraví odkazy pro demo.</p>
     </section>
@@ -113,10 +117,17 @@ Kolik stojí služby? | Ceny závisí na konkrétní službě. Orientační ceny
     <section class="panel">
       <h2>Vytvoření profilu</h2>
       <button id="createBtn">Vytvořit klienta</button>
-      <button class="secondary" id="previewBtn">Ukázat JSON náhled</button>
       <div id="message"></div>
-      <div class="links" id="links"></div>
-      <pre class="result" id="result">Výsledek se zobrazí zde.</pre>
+      <div class="successBox" id="successBox">
+        <h3>Klient byl vytvořen</h3>
+        <p>Profil je uložený. Teď můžeš otevřít demo, booking stránku nebo leady tohoto klienta.</p>
+        <div class="summary">
+          <div><span>Firma</span><b id="summaryCompany">—</b></div>
+          <div><span>Slug</span><b id="summarySlug">—</b></div>
+          <div><span>Služby</span><b id="summaryServices">—</b></div>
+        </div>
+        <div class="links" id="links"></div>
+      </div>
     </section>
   </main>
 
@@ -231,8 +242,8 @@ Kolik stojí služby? | Ceny závisí na konkrétní službě. Orientační ceny
     async function createProfile() {
       const profile = buildProfile();
       $('message').innerHTML = '<p class="warn">Ukládám profil...</p>';
-      $('result').textContent = JSON.stringify(profile, null, 2);
       $('links').innerHTML = '';
+      $('successBox').style.display = 'none';
       try {
         const response = await fetch('/api/business-profile', {
           method: 'PUT',
@@ -242,20 +253,24 @@ Kolik stojí služby? | Ceny závisí na konkrétní službě. Orientační ceny
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.message || 'Profil se nepodařilo uložit.');
         const slug = profile.businessSlug;
-        $('message').innerHTML = '<p class="ok">Klient byl vytvořen.</p>';
+        $('message').innerHTML = '';
+        $('summaryCompany').textContent = profile.companyName;
+        $('summarySlug').textContent = slug;
+        $('summaryServices').textContent = String(profile.services.length);
         $('links').innerHTML = `
           <a href="/booking/${slug}" target="_blank" rel="noreferrer">Booking link</a>
           <a href="/?businessSlug=${slug}" target="_blank" rel="noreferrer">Demo asistent</a>
           <a href="/call-leads?businessSlug=${slug}" target="_blank" rel="noreferrer">Leady klienta</a>
+          <a href="/api/business-profile?businessSlug=${slug}" target="_blank" rel="noreferrer">Veřejný profil</a>
         `;
-        $('result').textContent = JSON.stringify(data, null, 2);
+        $('successBox').style.display = 'block';
+        $('successBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
       } catch (error) {
         $('message').innerHTML = `<p class="bad">${error.message || 'Chyba při ukládání.'}</p>`;
       }
     }
 
     $('companyName').addEventListener('input', () => { $('businessSlug').value = slugify($('companyName').value); });
-    $('previewBtn').onclick = () => { $('result').textContent = JSON.stringify(buildProfile(), null, 2); };
     $('createBtn').onclick = createProfile;
   </script>
 </body>

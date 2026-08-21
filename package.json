@@ -1,9 +1,9 @@
 {
   "name": "prague-ai-voice",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "private": true,
   "type": "module",
-  "description": "Prague AI Voice - Client Profile Builder pro rychlé vytvoření nové firmy, booking linku, služeb a FAQ bez ruční úpravy kódu",
+  "description": "Prague AI Voice - Client Profile Builder bez JSON náhledu pro čistší klientské použití",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",

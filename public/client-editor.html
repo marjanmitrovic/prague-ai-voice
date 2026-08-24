@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Client Editor — Prague AI Voice</title>
+  <style>
+    :root { --bg:#f4f7fb; --panel:#fff; --text:#122033; --muted:#64748b; --border:#dbe3ee; --primary:#2563eb; --good:#047857; --warn:#b45309; --bad:#b91c1c; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter, Segoe UI, Arial, sans-serif; color:var(--text); background:linear-gradient(180deg,#f8fbff,var(--bg)); line-height:1.5; }
+    main { max-width:1180px; margin:0 auto; padding:28px; }
+    .topnav a { color:#1d4ed8; text-decoration:none; font-weight:900; margin-right:14px; }
+    .hero,.panel { background:var(--panel); border:1px solid var(--border); border-radius:22px; padding:20px; margin:0 0 18px; box-shadow:0 14px 35px rgba(15,23,42,.06); }
+    h1,h2,h3 { margin:0 0 10px; letter-spacing:-.02em; }
+    p { color:var(--muted); }
+    .badge { display:inline-flex; padding:4px 10px; border-radius:999px; background:#dcfce7; color:#047857; font-weight:900; font-size:13px; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    label { display:block; font-weight:900; margin:10px 0 6px; }
+    input,textarea,select { width:100%; border:1px solid var(--border); border-radius:14px; padding:11px; font:inherit; background:#fff; }
+    textarea { min-height:110px; resize:vertical; }
+    button,.btn { border:0; border-radius:14px; padding:11px 15px; font:inherit; font-weight:900; color:#fff; background:var(--primary); cursor:pointer; margin:8px 8px 0 0; text-decoration:none; display:inline-flex; }
+    .secondary { color:#0f172a; background:#e8eef8; }
+    .ok { color:var(--good); font-weight:900; }
+    .bad { color:var(--bad); font-weight:900; }
+    .warn { color:var(--warn); font-weight:900; }
+    .links a { display:inline-flex; margin:8px 8px 0 0; color:#fff; background:#2563eb; padding:10px 14px; border-radius:12px; text-decoration:none; font-weight:900; }
+    .readonly { background:#f8fafc; color:#475569; }
+    @media (max-width:900px){ main{padding:16px}.grid{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="topnav">
+      <a href="/admin">Admin</a>
+      <a href="/clients">Klienti</a>
+      <a href="/client-profile-builder">Nový klient</a>
+      <a href="/booking">Rezervace</a>
+    </div>
+
+    <section class="hero">
+      <span class="badge">4.2.0 — Client Editor</span>
+      <h1>Upravit existujícího klienta</h1>
+      <p>Vyber firmu a bezpečně uprav popis, adresu, pracovní dobu, služby, ceny a FAQ bez vytváření nového klienta.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Výběr klienta</h2>
+      <div class="grid">
+        <div>
+          <label for="businessSelect">Klient</label>
+          <select id="businessSelect"></select>
+        </div>
+        <div>
+          <label for="businessSlug">Slug</label>
+          <input class="readonly" id="businessSlug" readonly />
+        </div>
+      </div>
+      <button id="loadBtn">Načíst klienta</button>
+      <a class="btn secondary" id="bookingLink" href="/booking" target="_blank" rel="noreferrer">Booking</a>
+      <a class="btn secondary" id="demoLink" href="/" target="_blank" rel="noreferrer">Demo</a>
+      <div id="message"></div>
+    </section>
+
+    <section class="panel" id="editorPanel" style="display:none">
+      <h2>Profil klienta</h2>
+      <div class="grid">
+        <div>
+          <label for="companyName">Název firmy</label>
+          <input id="companyName" />
+        </div>
+        <div>
+          <label for="assistantName">Jméno asistenta</label>
+          <input id="assistantName" />
+        </div>
+        <div>
+          <label for="address">Adresa</label>
+          <input id="address" />
+        </div>
+        <div>
+          <label for="workHours">Pracovní doba</label>
+          <input id="workHours" />
+        </div>
+      </div>
+      <label for="description">Popis firmy</label>
+      <textarea id="description"></textarea>
+    </section>
+
+    <section class="panel" id="servicesPanel" style="display:none">
+      <h2>Služby</h2>
+      <p>Každý řádek: <b>Název | cena | minuty | popis</b></p>
+      <textarea id="services"></textarea>
+    </section>
+
+    <section class="panel" id="faqPanel" style="display:none">
+      <h2>FAQ / znalosti</h2>
+      <p>Každý řádek: <b>Otázka | odpověď | klíčová slova</b></p>
+      <textarea id="faq"></textarea>
+    </section>
+
+    <section class="panel" id="savePanel" style="display:none">
+      <h2>Uložit změny</h2>
+      <button id="saveBtn">Uložit klienta</button>
+      <button class="secondary" id="reloadBtn">Vrátit poslední uloženou verzi</button>
+      <div class="links" id="links"></div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let currentProfile = null;
+
+    function parseMinutes(value) {
+      const n = Number(String(value || '').replace(/[^0-9]/g, ''));
+      return Number.isFinite(n) && n >= 5 ? Math.min(n, 480) : 30;
+    }
+
+    function serviceRows(services) {
+      return (services || []).map((service) => [
+        service.name || '',
+        service.price || 'dle domluvy',
+        service.durationMinutes || parseMinutes(service.duration || '30'),
+        service.description || service.name || '',
+      ].join(' | ')).join('\n');
+    }
+
+    function faqRows(items) {
+      return (items || []).map((item) => [
+        item.question || '',
+        item.answer || '',
+        (item.keywords || []).join(','),
+      ].join(' | ')).join('\n');
+    }
+
+    function parseServices() {
+      return $('services').value.split('\n').map((line) => line.trim()).filter(Boolean).map((line) => {
+        const [nameRaw, priceRaw, minutesRaw, descRaw] = line.split('|').map((part) => (part || '').trim());
+        const durationMinutes = parseMinutes(minutesRaw || '30');
+        const name = nameRaw || 'Služba';
+        const price = priceRaw || 'dle domluvy';
+        return {
+          name,
+          description: descRaw || name,
+          price,
+          spokenPrice: price,
+          duration: `${durationMinutes} minut`,
+          durationMinutes,
+          bookingEnabled: true,
+        };
+      }).slice(0, 40);
+    }
+
+    function parseFaq() {
+      return $('faq').value.split('\n').map((line) => line.trim()).filter(Boolean).map((line) => {
+        const [questionRaw, answerRaw, keywordsRaw] = line.split('|').map((part) => (part || '').trim());
+        return {
+          question: questionRaw || 'Dotaz zákazníka',
+          answer: answerRaw || 'Ozveme se vám zpět s upřesněním.',
+          keywords: (keywordsRaw || '').split(',').map((keyword) => keyword.trim()).filter(Boolean),
+        };
+      }).slice(0, 100);
+    }
+
+    function setLinks(slug) {
+      $('bookingLink').href = `/booking/${slug}`;
+      $('demoLink').href = `/?businessSlug=${slug}`;
+      $('links').innerHTML = `
+        <a href="/booking/${slug}" target="_blank" rel="noreferrer">Booking link</a>
+        <a href="/?businessSlug=${slug}" target="_blank" rel="noreferrer">Demo asistent</a>
+        <a href="/call-leads?businessSlug=${slug}" target="_blank" rel="noreferrer">Leady klienta</a>
+      `;
+    }
+
+    function showEditor(show) {
+      ['editorPanel','servicesPanel','faqPanel','savePanel'].forEach((id) => { $(id).style.display = show ? 'block' : 'none'; });
+    }
+
+    async function loadBusinesses() {
+      const res = await fetch('/api/businesses');
+      const data = await res.json();
+      const businesses = data.businesses || [];
+      $('businessSelect').innerHTML = businesses.map((business) => `<option value="${business.slug}">${business.companyName} — ${business.slug}</option>`).join('');
+      if (businesses[0]) {
+        $('businessSlug').value = businesses[0].slug;
+        setLinks(businesses[0].slug);
+      }
+    }
+
+    async function loadProfile() {
+      const slug = $('businessSelect').value;
+      if (!slug) return;
+      $('message').innerHTML = '<p class="warn">Načítám profil...</p>';
+      showEditor(false);
+      const res = await fetch(`/api/business-profile/full?businessSlug=${encodeURIComponent(slug)}`);
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        $('message').innerHTML = `<p class="bad">${data.message || 'Profil se nepodařilo načíst.'}</p>`;
+        return;
+      }
+      currentProfile = data.profile;
+      $('businessSlug').value = currentProfile.businessSlug;
+      $('companyName').value = currentProfile.companyName || '';
+      $('assistantName').value = currentProfile.assistantName || 'AI asistent';
+      $('address').value = currentProfile.address || '';
+      $('workHours').value = currentProfile.openingHours?.[0]?.hours || '';
+      $('description').value = currentProfile.description || '';
+      $('services').value = serviceRows(currentProfile.services);
+      $('faq').value = faqRows(currentProfile.knowledgeBase);
+      setLinks(currentProfile.businessSlug);
+      showEditor(true);
+      $('message').innerHTML = `<p class="ok">Profil načten: ${currentProfile.companyName}</p>`;
+    }
+
+    async function saveProfile() {
+      if (!currentProfile) return;
+      const updated = {
+        ...currentProfile,
+        companyName: $('companyName').value.trim() || currentProfile.companyName,
+        assistantName: $('assistantName').value.trim() || currentProfile.assistantName,
+        description: $('description').value.trim() || currentProfile.description,
+        address: $('address').value.trim() || currentProfile.address,
+        openingHours: [{
+          ...(currentProfile.openingHours?.[0] || { days: 'Po–Pá', spoken: '' }),
+          hours: $('workHours').value.trim() || 'Po–Pá 08:00–17:00',
+          spoken: `Máme otevřeno ${$('workHours').value.trim() || 'Po–Pá 08:00–17:00'}.`,
+        }],
+        services: parseServices(),
+        knowledgeBase: parseFaq(),
+      };
+      $('message').innerHTML = '<p class="warn">Ukládám změny...</p>';
+      const res = await fetch('/api/business-profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        $('message').innerHTML = `<p class="bad">${data.message || 'Změny se nepodařilo uložit.'}</p>`;
+        return;
+      }
+      await loadBusinesses();
+      $('businessSelect').value = updated.businessSlug;
+      await loadProfile();
+      $('message').innerHTML = `<p class="ok">Změny byly uloženy pro klienta ${updated.companyName}.</p>`;
+    }
+
+    $('businessSelect').addEventListener('change', () => {
+      $('businessSlug').value = $('businessSelect').value;
+      setLinks($('businessSelect').value);
+      showEditor(false);
+    });
+    $('loadBtn').onclick = loadProfile;
+    $('reloadBtn').onclick = loadProfile;
+    $('saveBtn').onclick = saveProfile;
+
+    loadBusinesses().then(loadProfile).catch((error) => {
+      $('message').innerHTML = `<p class="bad">${error.message || 'Chyba při načítání klientů.'}</p>`;
+    });
+  </script>
+</body>
+</html>

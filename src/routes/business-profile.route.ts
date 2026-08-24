@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { requireAdmin } from '../auth.js';
-import { listPublicBusinesses, publicBusinessProfile, reloadBusinessProfile, saveBusinessProfile } from '../business/business-profile.js';
+import { getBusinessProfile, listPublicBusinesses, publicBusinessProfile, reloadBusinessProfile, saveBusinessProfile } from '../business/business-profile.js';
 import { DEFAULT_BUSINESS_SLUG, safeBusinessSlug } from '../storage-postgres.js';
 
 function queryBusinessSlug(query: unknown): string {
@@ -26,6 +26,18 @@ export async function businessProfileRoute(app: FastifyInstance): Promise<void> 
       exists: Boolean(existing),
       business: existing ?? null,
     };
+  });
+
+  app.get('/api/business-profile/full', async (request, reply) => {
+    if (!(await requireAdmin(request, reply))) return;
+    try {
+      const businessSlug = queryBusinessSlug(request.query);
+      const profile = getBusinessProfile(businessSlug);
+      return { ok: true, profile };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Profile load failed';
+      return reply.code(404).send({ ok: false, error: 'business_profile_not_found', message });
+    }
   });
 
   app.get('/api/business-profile', async (request) => {

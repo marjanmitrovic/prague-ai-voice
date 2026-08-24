@@ -1,9 +1,9 @@
 {
   "name": "prague-ai-voice",
-  "version": "4.0.1",
+  "version": "4.1.0",
   "private": true,
   "type": "module",
-  "description": "Prague AI Voice - Client Profile Builder bez JSON náhledu pro čistší klientské použití",
+  "description": "Prague AI Voice - Client Profile Builder se zaštitom od duplog sluga i slučajnog prepisivanja klijenta",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",

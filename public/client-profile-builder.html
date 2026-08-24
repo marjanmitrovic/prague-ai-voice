@@ -44,9 +44,9 @@
     </div>
 
     <section class="hero">
-      <span class="badge">4.0.1 — Client Profile Builder</span>
+      <span class="badge">4.1.0 — Client Profile Builder</span>
       <h1>Vytvořit nového klienta</h1>
-      <p>Vyplň základní údaje, služby a FAQ. Stránka vytvoří nový business profil a připraví odkazy pro demo.</p>
+      <p>Vyplň základní údaje, služby a FAQ. Builder před uložením zkontroluje, jestli slug už neexistuje.</p>
     </section>
 
     <section class="panel">
@@ -59,7 +59,10 @@
         <div>
           <label for="businessSlug">Slug / URL</label>
           <input id="businessSlug" value="autoservis-novak" />
-          <div class="hint">Pouze malá písmena, čísla a pomlčky.</div>
+          <div class="hint">Pouze malá písmena, čísla a pomlčky. Před uložením se ověří duplicita.</div>
+          <button class="secondary" id="checkSlugBtn">Zkontrolovat slug</button>
+          <button class="secondary" id="suggestSlugBtn">Navrhnout jiný slug</button>
+          <div id="slugStatus" class="hint"></div>
         </div>
         <div>
           <label for="businessType">Typ firmy</label>
@@ -108,7 +111,7 @@ Kontrola brzd | od 900 Kč | 45 | Kontrola brzdového systému a bezpečnosti</t
 
     <section class="panel">
       <h2>FAQ / znalosti</h2>
-      <p>Každý blok: <b>Otázka | odpověď | klíčová slova</b></p>
+      <p>Každý řádek: <b>Otázka | odpověď | klíčová slova</b></p>
       <textarea id="faq">Kde vás najdu? | Najdete nás na adrese Praha, Česká republika. | adresa,kde,lokace
 Jak se objednat? | Stačí zanechat telefon nebo požadovaný termín a ozveme se zpět. | objednání,rezervace,termín
 Kolik stojí služby? | Ceny závisí na konkrétní službě. Orientační ceny jsou uvedené v nabídce služeb. | cena,kolik,platba</textarea>
@@ -155,15 +158,7 @@ Kolik stojí služby? | Ceny závisí na konkrétní službě. Orientační ceny
         const name = nameRaw || 'Služba';
         const price = priceRaw || 'dle domluvy';
         const durationMinutes = parseMinutes(minutesRaw || '30');
-        return {
-          name,
-          description: descRaw || name,
-          price,
-          spokenPrice: price,
-          duration: `${durationMinutes} minut`,
-          durationMinutes,
-          bookingEnabled: true,
-        };
+        return { name, description: descRaw || name, price, spokenPrice: price, duration: `${durationMinutes} minut`, durationMinutes, bookingEnabled: true };
       }).slice(0, 20);
     }
 
@@ -198,30 +193,15 @@ Kolik stojí služby? | Ceny závisí na konkrétní službě. Orientační ceny
         currency: 'Kč',
         description: $('description').value.trim() || `AI asistent pro ${companyName}.`,
         address,
-        openingHours: [{
-          days: 'Po–Pá',
-          hours: $('workHours').value.trim() || 'Po–Pá 08:00–17:00',
-          spoken: `Máme otevřeno ${$('workHours').value.trim() || 'po až pá od osmi do sedmnácti hodin'}.`,
-        }],
+        openingHours: [{ days: 'Po–Pá', hours: $('workHours').value.trim() || 'Po–Pá 08:00–17:00', spoken: `Máme otevřeno ${$('workHours').value.trim() || 'po až pá od osmi do sedmnácti hodin'}.` }],
         bookingRules: {
-          timezone: 'Europe/Prague',
-          slotMinutes: 15,
-          minNoticeMinutes: 60,
-          bufferMinutes: 0,
+          timezone: 'Europe/Prague', slotMinutes: 15, minNoticeMinutes: 60, bufferMinutes: 0,
           workingHours: {
-            monday: [{ start: '08:00', end: '17:00' }],
-            tuesday: [{ start: '08:00', end: '17:00' }],
-            wednesday: [{ start: '08:00', end: '17:00' }],
-            thursday: [{ start: '08:00', end: '17:00' }],
-            friday: [{ start: '08:00', end: '17:00' }],
-            saturday: [],
-            sunday: [],
+            monday: [{ start: '08:00', end: '17:00' }], tuesday: [{ start: '08:00', end: '17:00' }], wednesday: [{ start: '08:00', end: '17:00' }], thursday: [{ start: '08:00', end: '17:00' }], friday: [{ start: '08:00', end: '17:00' }], saturday: [], sunday: [],
           },
           closedDates: [],
         },
-        services: services.length ? services : [{
-          name: 'Konzultace', description: 'Základní konzultace se zákazníkem.', price: 'dle domluvy', spokenPrice: 'dle domluvy', duration: '30 minut', durationMinutes: 30, bookingEnabled: true,
-        }],
+        services: services.length ? services : [{ name: 'Konzultace', description: 'Základní konzultace se zákazníkem.', price: 'dle domluvy', spokenPrice: 'dle domluvy', duration: '30 minut', durationMinutes: 30, bookingEnabled: true }],
         messages: {
           empty: 'Napište prosím, s čím potřebujete pomoci.',
           bookingNotAvailable: 'Přímá rezervace teď není dostupná. Zanechte prosím telefon a ozveme se zpět.',
@@ -239,24 +219,52 @@ Kolik stojí služby? | Ceny závisí na konkrétní službě. Orientační ceny
       };
     }
 
+    function suggestSlug() {
+      const base = slugify($('companyName').value || $('businessSlug').value || 'novy-klient');
+      const suffix = String(Date.now()).slice(-4);
+      $('businessSlug').value = `${base}-${suffix}`;
+      $('slugStatus').innerHTML = '<span class="warn">Navržen nový slug. Doporučeno ještě zkontrolovat.</span>';
+    }
+
+    async function checkSlug(showFreeMessage = true) {
+      const slug = slugify($('businessSlug').value || $('companyName').value);
+      $('businessSlug').value = slug;
+      $('slugStatus').innerHTML = '<span class="warn">Kontroluji slug...</span>';
+      const response = await fetch(`/api/business-profile/exists?businessSlug=${encodeURIComponent(slug)}`);
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.message || 'Kontrola slugu se nezdařila.');
+      if (data.exists) {
+        $('slugStatus').innerHTML = `<span class="bad">Slug už existuje: ${data.business?.companyName || slug}. Zvolte jiný slug.</span>`;
+        return false;
+      }
+      if (showFreeMessage) $('slugStatus').innerHTML = '<span class="ok">Slug je volný.</span>';
+      return true;
+    }
+
     async function createProfile() {
       const profile = buildProfile();
-      $('message').innerHTML = '<p class="warn">Ukládám profil...</p>';
+      $('message').innerHTML = '<p class="warn">Kontroluji slug...</p>';
       $('links').innerHTML = '';
       $('successBox').style.display = 'none';
       try {
-        const response = await fetch('/api/business-profile', {
-          method: 'PUT',
+        const slugFree = await checkSlug(false);
+        if (!slugFree) {
+          $('message').innerHTML = '<p class="bad">Klient nebyl vytvořen. Slug už existuje, aby se nepřepsal existující profil.</p>';
+          return;
+        }
+        $('message').innerHTML = '<p class="warn">Ukládám profil...</p>';
+        const response = await fetch('/api/business-profile/create', {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(profile),
         });
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.message || 'Profil se nepodařilo uložit.');
         const slug = profile.businessSlug;
-        $('message').innerHTML = '';
         $('summaryCompany').textContent = profile.companyName;
         $('summarySlug').textContent = slug;
         $('summaryServices').textContent = String(profile.services.length);
+        $('message').innerHTML = '<p class="ok">Klient byl vytvořen.</p>';
         $('links').innerHTML = `
           <a href="/booking/${slug}" target="_blank" rel="noreferrer">Booking link</a>
           <a href="/?businessSlug=${slug}" target="_blank" rel="noreferrer">Demo asistent</a>
@@ -264,13 +272,18 @@ Kolik stojí služby? | Ceny závisí na konkrétní službě. Orientační ceny
           <a href="/api/business-profile?businessSlug=${slug}" target="_blank" rel="noreferrer">Veřejný profil</a>
         `;
         $('successBox').style.display = 'block';
-        $('successBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
       } catch (error) {
         $('message').innerHTML = `<p class="bad">${error.message || 'Chyba při ukládání.'}</p>`;
       }
     }
 
-    $('companyName').addEventListener('input', () => { $('businessSlug').value = slugify($('companyName').value); });
+    $('companyName').addEventListener('input', () => {
+      $('businessSlug').value = slugify($('companyName').value);
+      $('slugStatus').textContent = '';
+    });
+    $('businessSlug').addEventListener('input', () => { $('slugStatus').textContent = ''; });
+    $('checkSlugBtn').onclick = () => checkSlug(true).catch((error) => { $('slugStatus').innerHTML = `<span class="bad">${error.message}</span>`; });
+    $('suggestSlugBtn').onclick = suggestSlug;
     $('createBtn').onclick = createProfile;
   </script>
 </body>

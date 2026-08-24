@@ -36,8 +36,8 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
 
     return {
       ok: true,
-      version: '4.0.0',
-      mode: 'client-profile-builder-admin-protected-no-paid-llm',
+      version: '4.1.0',
+      mode: 'duplicate-slug-protected-client-profile-builder-no-paid-llm',
       storage: storageInfo.mode,
       databaseUrlConfigured: storageInfo.databaseUrlConfigured,
       telephony: 'voice-gateway-webhook-ready',
@@ -57,6 +57,9 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
       adminDashboardReady: true,
       clientProfileBuilder: '/client-profile-builder',
       clientProfileBuilderReady: true,
+      duplicateSlugProtection: true,
+      businessProfileExistsEndpoint: '/api/business-profile/exists',
+      safeBusinessCreateEndpoint: '/api/business-profile/create',
       clientOnboardingPack: '/client-onboarding-pack',
       clientOnboardingPackReady: true,
       publicNavigationCleaned: true,
@@ -73,6 +76,7 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
       checks: {
         businessProfile: true,
         clientProfileBuilder: true,
+        duplicateSlugProtection: true,
         bookings: true,
         availability: true,
         conversationalBooking: true,

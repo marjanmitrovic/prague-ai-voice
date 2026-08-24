@@ -36,8 +36,8 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
 
     return {
       ok: true,
-      version: '4.1.0',
-      mode: 'duplicate-slug-protected-client-profile-builder-no-paid-llm',
+      version: '4.2.0',
+      mode: 'client-editor-and-duplicate-slug-protected-no-paid-llm',
       storage: storageInfo.mode,
       databaseUrlConfigured: storageInfo.databaseUrlConfigured,
       telephony: 'voice-gateway-webhook-ready',
@@ -57,6 +57,9 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
       adminDashboardReady: true,
       clientProfileBuilder: '/client-profile-builder',
       clientProfileBuilderReady: true,
+      clientEditor: '/client-editor',
+      clientEditorReady: true,
+      fullBusinessProfileEndpoint: '/api/business-profile/full',
       duplicateSlugProtection: true,
       businessProfileExistsEndpoint: '/api/business-profile/exists',
       safeBusinessCreateEndpoint: '/api/business-profile/create',
@@ -64,7 +67,7 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
       clientOnboardingPackReady: true,
       publicNavigationCleaned: true,
       publicPages: ['/', '/sales', '/booking', '/demo-scenarios', '/sales-presentation', '/phone-connection'],
-      protectedPages: ['/admin', '/client-profile-builder', '/client-onboarding-pack', '/call-leads', '/production-checklist', '/voice-webhook-test', '/unknown-questions', '/website-import', '/weaknesses', '/clients', '/onboarding', '/tts-test'],
+      protectedPages: ['/admin', '/client-profile-builder', '/client-editor', '/client-onboarding-pack', '/call-leads', '/production-checklist', '/voice-webhook-test', '/unknown-questions', '/website-import', '/weaknesses', '/clients', '/onboarding', '/tts-test'],
       businessSlug,
       businessesCount: businesses.length,
       businesses,
@@ -76,6 +79,8 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
       checks: {
         businessProfile: true,
         clientProfileBuilder: true,
+        clientEditor: true,
+        fullBusinessProfileEndpoint: true,
         duplicateSlugProtection: true,
         bookings: true,
         availability: true,

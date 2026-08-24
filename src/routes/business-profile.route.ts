@@ -8,9 +8,24 @@ function queryBusinessSlug(query: unknown): string {
   return safeBusinessSlug(value || DEFAULT_BUSINESS_SLUG);
 }
 
+function findBusinessSummary(businessSlug: string) {
+  return listPublicBusinesses().find((business) => business.slug === businessSlug);
+}
+
 export async function businessProfileRoute(app: FastifyInstance): Promise<void> {
   app.get('/api/businesses', async () => {
     return { ok: true, businesses: listPublicBusinesses() };
+  });
+
+  app.get('/api/business-profile/exists', async (request) => {
+    const businessSlug = queryBusinessSlug(request.query);
+    const existing = findBusinessSummary(businessSlug);
+    return {
+      ok: true,
+      businessSlug,
+      exists: Boolean(existing),
+      business: existing ?? null,
+    };
   });
 
   app.get('/api/business-profile', async (request) => {
@@ -26,6 +41,31 @@ export async function businessProfileRoute(app: FastifyInstance): Promise<void> 
       return { ok: true, profile: publicBusinessProfile(profile) };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Profile reload failed';
+      return reply.code(400).send({ ok: false, error: 'invalid_business_profile', message });
+    }
+  });
+
+  app.post('/api/business-profile/create', async (request, reply) => {
+    if (!(await requireAdmin(request, reply))) return;
+    try {
+      const body = request.body as Record<string, unknown>;
+      const businessSlug = safeBusinessSlug(String(body.businessSlug || queryBusinessSlug(request.query)));
+      const existing = findBusinessSummary(businessSlug);
+      if (existing) {
+        return reply.code(409).send({
+          ok: false,
+          error: 'business_slug_exists',
+          message: 'Tento slug už existuje. Zvolte jiný název nebo jiný slug.',
+          businessSlug,
+          business: existing,
+        });
+      }
+
+      const profile = await saveBusinessProfile({ ...body, businessSlug }, businessSlug);
+      request.log.info({ businessSlug, companyName: profile.companyName, services: profile.services.length }, 'Business profile created');
+      return reply.code(201).send({ ok: true, profile: publicBusinessProfile(profile) });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Profile create failed';
       return reply.code(400).send({ ok: false, error: 'invalid_business_profile', message });
     }
   });

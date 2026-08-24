@@ -1,9 +1,9 @@
 {
   "name": "prague-ai-voice",
-  "version": "4.2.0",
+  "version": "4.3.0",
   "private": true,
   "type": "module",
-  "description": "Prague AI Voice - Client Editor za uređivanje postojećih klijenata, usluga, cena, radnog vremena i FAQ bez ručne izmene koda",
+  "description": "Prague AI Voice - Client Editor sa backup linkom pre izmene postojećih klijenata",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",

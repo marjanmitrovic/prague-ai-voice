@@ -20,10 +20,13 @@
     textarea { min-height:110px; resize:vertical; }
     button,.btn { border:0; border-radius:14px; padding:11px 15px; font:inherit; font-weight:900; color:#fff; background:var(--primary); cursor:pointer; margin:8px 8px 0 0; text-decoration:none; display:inline-flex; }
     .secondary { color:#0f172a; background:#e8eef8; }
+    .backup { color:#0f172a; background:#fde68a; }
     .ok { color:var(--good); font-weight:900; }
     .bad { color:var(--bad); font-weight:900; }
     .warn { color:var(--warn); font-weight:900; }
+    .note { background:#fffbeb; border:1px solid #fde68a; border-radius:16px; padding:13px; color:#92400e; font-weight:800; margin:10px 0; }
     .links a { display:inline-flex; margin:8px 8px 0 0; color:#fff; background:#2563eb; padding:10px 14px; border-radius:12px; text-decoration:none; font-weight:900; }
+    .links a.backupLink { color:#0f172a; background:#fde68a; }
     .readonly { background:#f8fafc; color:#475569; }
     @media (max-width:900px){ main{padding:16px}.grid{grid-template-columns:1fr} }
   </style>
@@ -38,9 +41,9 @@
     </div>
 
     <section class="hero">
-      <span class="badge">4.2.0 — Client Editor</span>
+      <span class="badge">4.3.0 — Client Editor + backup</span>
       <h1>Upravit existujícího klienta</h1>
-      <p>Vyber firmu a bezpečně uprav popis, adresu, pracovní dobu, služby, ceny a FAQ bez vytváření nového klienta.</p>
+      <p>Vyber firmu, stáhni backup a bezpečně uprav popis, adresu, pracovní dobu, služby, ceny a FAQ.</p>
     </section>
 
     <section class="panel">
@@ -56,6 +59,7 @@
         </div>
       </div>
       <button id="loadBtn">Načíst klienta</button>
+      <a class="btn backup" id="backupTopLink" href="/api/system/backup.json" target="_blank" rel="noreferrer">Stáhnout backup</a>
       <a class="btn secondary" id="bookingLink" href="/booking" target="_blank" rel="noreferrer">Booking</a>
       <a class="btn secondary" id="demoLink" href="/" target="_blank" rel="noreferrer">Demo</a>
       <div id="message"></div>
@@ -99,6 +103,8 @@
 
     <section class="panel" id="savePanel" style="display:none">
       <h2>Uložit změny</h2>
+      <div class="note">Před uložením doporučeno stáhnout backup aktuální verze klienta.</div>
+      <a class="btn backup" id="backupSaveLink" href="/api/system/backup.json" target="_blank" rel="noreferrer">Stáhnout backup před uložením</a>
       <button id="saveBtn">Uložit klienta</button>
       <button class="secondary" id="reloadBtn">Vrátit poslední uloženou verzi</button>
       <div class="links" id="links"></div>
@@ -161,9 +167,13 @@
     }
 
     function setLinks(slug) {
+      const backupUrl = `/api/system/backup.json?businessSlug=${encodeURIComponent(slug)}`;
       $('bookingLink').href = `/booking/${slug}`;
       $('demoLink').href = `/?businessSlug=${slug}`;
+      $('backupTopLink').href = backupUrl;
+      $('backupSaveLink').href = backupUrl;
       $('links').innerHTML = `
+        <a class="backupLink" href="${backupUrl}" target="_blank" rel="noreferrer">Backup JSON</a>
         <a href="/booking/${slug}" target="_blank" rel="noreferrer">Booking link</a>
         <a href="/?businessSlug=${slug}" target="_blank" rel="noreferrer">Demo asistent</a>
         <a href="/call-leads?businessSlug=${slug}" target="_blank" rel="noreferrer">Leady klienta</a>
@@ -212,6 +222,8 @@
 
     async function saveProfile() {
       if (!currentProfile) return;
+      const confirmed = confirm('Před uložením je doporučeno stáhnout backup. Pokračovat v uložení změn?');
+      if (!confirmed) return;
       const updated = {
         ...currentProfile,
         companyName: $('companyName').value.trim() || currentProfile.companyName,

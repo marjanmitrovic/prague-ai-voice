@@ -36,8 +36,8 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
 
     return {
       ok: true,
-      version: '4.3.0',
-      mode: 'client-editor-backup-before-save-no-paid-llm',
+      version: '4.4.0',
+      mode: 'client-editor-backup-restore-no-paid-llm',
       storage: storageInfo.mode,
       databaseUrlConfigured: storageInfo.databaseUrlConfigured,
       telephony: 'voice-gateway-webhook-ready',
@@ -61,6 +61,8 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
       clientEditorReady: true,
       clientEditorBackupBeforeSave: true,
       backupEndpoint: '/api/system/backup.json',
+      restoreEndpoint: '/api/business-profile/restore',
+      clientBackupRestore: true,
       fullBusinessProfileEndpoint: '/api/business-profile/full',
       duplicateSlugProtection: true,
       businessProfileExistsEndpoint: '/api/business-profile/exists',
@@ -84,6 +86,8 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
         clientEditor: true,
         clientEditorBackupBeforeSave: true,
         backupEndpoint: true,
+        clientBackupRestore: true,
+        restoreEndpoint: true,
         fullBusinessProfileEndpoint: true,
         duplicateSlugProtection: true,
         bookings: true,

@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { requireAdmin } from '../auth.js';
+import { recordClientActivity } from '../client-activity-log.js';
 import { getBusinessProfile, listPublicBusinesses, publicBusinessProfile, reloadBusinessProfile, saveBusinessProfile } from '../business/business-profile.js';
 import { DEFAULT_BUSINESS_SLUG, SECONDARY_DEMO_SLUG, deleteBusinessProfileData, safeBusinessSlug } from '../storage-postgres.js';
 
@@ -89,6 +90,13 @@ export async function businessProfileRoute(app: FastifyInstance): Promise<void> 
       }
 
       const profile = await saveBusinessProfile({ ...body, businessSlug }, businessSlug);
+      recordClientActivity({
+        action: 'client_created',
+        businessSlug,
+        companyName: profile.companyName,
+        message: `Klient ${profile.companyName} byl vytvořen.`,
+        details: { services: profile.services.length },
+      });
       request.log.info({ businessSlug, companyName: profile.companyName, services: profile.services.length }, 'Business profile created');
       return reply.code(201).send({ ok: true, profile: publicBusinessProfile(profile) });
     } catch (error) {
@@ -126,6 +134,13 @@ export async function businessProfileRoute(app: FastifyInstance): Promise<void> 
       }
 
       const profile = await saveBusinessProfile({ ...restoredProfile, businessSlug: targetSlug }, targetSlug);
+      recordClientActivity({
+        action: 'client_restored',
+        businessSlug: targetSlug,
+        companyName: profile.companyName,
+        message: `Klient ${profile.companyName} byl obnoven z backupu.`,
+        details: { services: profile.services.length },
+      });
       request.log.warn({ businessSlug: targetSlug, companyName: profile.companyName, services: profile.services.length }, 'Business profile restored from backup');
       return { ok: true, restored: true, profile: publicBusinessProfile(profile) };
     } catch (error) {
@@ -165,6 +180,13 @@ export async function businessProfileRoute(app: FastifyInstance): Promise<void> 
       }
 
       await deleteBusinessProfileData(businessSlug);
+      recordClientActivity({
+        action: 'client_deleted',
+        businessSlug,
+        companyName: existing.companyName,
+        message: `Klient ${existing.companyName} byl smazán.`,
+        details: { services: existing.servicesCount },
+      });
       request.log.warn({ businessSlug, companyName: existing.companyName }, 'Business profile deleted');
       return { ok: true, deleted: true, businessSlug, business: existing };
     } catch (error) {
@@ -179,6 +201,13 @@ export async function businessProfileRoute(app: FastifyInstance): Promise<void> 
       const body = request.body as Record<string, unknown>;
       const businessSlug = safeBusinessSlug(String(body.businessSlug || queryBusinessSlug(request.query)));
       const profile = await saveBusinessProfile({ ...body, businessSlug }, businessSlug);
+      recordClientActivity({
+        action: 'client_updated',
+        businessSlug,
+        companyName: profile.companyName,
+        message: `Profil klienta ${profile.companyName} byl upraven.`,
+        details: { services: profile.services.length },
+      });
       request.log.info({ businessSlug, companyName: profile.companyName, services: profile.services.length }, 'Business profile saved');
       return { ok: true, profile: publicBusinessProfile(profile) };
     } catch (error) {

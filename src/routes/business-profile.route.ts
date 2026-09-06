@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { requireAdmin } from '../auth.js';
 import { getBusinessProfile, listPublicBusinesses, publicBusinessProfile, reloadBusinessProfile, saveBusinessProfile } from '../business/business-profile.js';
-import { DEFAULT_BUSINESS_SLUG, safeBusinessSlug } from '../storage-postgres.js';
+import { DEFAULT_BUSINESS_SLUG, SECONDARY_DEMO_SLUG, deleteBusinessProfileData, safeBusinessSlug } from '../storage-postgres.js';
 
 function queryBusinessSlug(query: unknown): string {
   const value = (query as Record<string, string | undefined> | undefined)?.businessSlug;
@@ -21,6 +21,10 @@ function profileFromRestoreBody(body: unknown): Record<string, unknown> {
     throw new Error('Soubor nevypadá jako platný backup business profilu.');
   }
   return profile;
+}
+
+function protectedDemoSlug(slug: string): boolean {
+  return slug === DEFAULT_BUSINESS_SLUG || slug === SECONDARY_DEMO_SLUG;
 }
 
 export async function businessProfileRoute(app: FastifyInstance): Promise<void> {
@@ -127,6 +131,45 @@ export async function businessProfileRoute(app: FastifyInstance): Promise<void> 
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Profile restore failed';
       return reply.code(400).send({ ok: false, error: 'invalid_business_profile_backup', message });
+    }
+  });
+
+  app.delete('/api/business-profile', async (request, reply) => {
+    if (!(await requireAdmin(request, reply))) return;
+    try {
+      const body = request.body as Record<string, unknown> | undefined;
+      const businessSlug = safeBusinessSlug(String(body?.businessSlug || queryBusinessSlug(request.query)));
+      const confirmation = String(body?.confirmation || '').trim();
+      const existing = findBusinessSummary(businessSlug);
+
+      if (!existing) {
+        return reply.code(404).send({ ok: false, error: 'business_profile_not_found', message: 'Klient nebyl nalezen.', businessSlug });
+      }
+
+      if (protectedDemoSlug(businessSlug)) {
+        return reply.code(403).send({
+          ok: false,
+          error: 'protected_business_slug',
+          message: 'Tento demo profil je chráněný a nelze ho smazat přes editor.',
+          businessSlug,
+        });
+      }
+
+      if (confirmation !== businessSlug) {
+        return reply.code(400).send({
+          ok: false,
+          error: 'delete_confirmation_required',
+          message: 'Pro smazání napište přesný slug klienta.',
+          businessSlug,
+        });
+      }
+
+      await deleteBusinessProfileData(businessSlug);
+      request.log.warn({ businessSlug, companyName: existing.companyName }, 'Business profile deleted');
+      return { ok: true, deleted: true, businessSlug, business: existing };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Profile delete failed';
+      return reply.code(400).send({ ok: false, error: 'business_profile_delete_failed', message });
     }
   });
 

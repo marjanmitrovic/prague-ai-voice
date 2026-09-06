@@ -21,13 +21,12 @@
     button,.btn { border:0; border-radius:14px; padding:11px 15px; font:inherit; font-weight:900; color:#fff; background:var(--primary); cursor:pointer; margin:8px 8px 0 0; text-decoration:none; display:inline-flex; }
     .secondary { color:#0f172a; background:#e8eef8; }
     .backup { color:#0f172a; background:#fde68a; }
-    .restore { color:#fff; background:#b45309; }
+    .danger { background:#b91c1c; color:#fff; }
     .ok { color:var(--good); font-weight:900; }
     .bad { color:var(--bad); font-weight:900; }
     .warn { color:var(--warn); font-weight:900; }
     .note { background:#fffbeb; border:1px solid #fde68a; border-radius:16px; padding:13px; color:#92400e; font-weight:800; margin:10px 0; }
-    .restoreBox { background:#fff7ed; border:1px solid #fed7aa; border-radius:16px; padding:14px; margin-top:14px; }
-    .restoreBox input { background:#fff; }
+    .dangerBox { background:#fef2f2; border:1px solid #fecaca; border-radius:16px; padding:13px; color:#991b1b; font-weight:800; margin:10px 0; }
     .links a { display:inline-flex; margin:8px 8px 0 0; color:#fff; background:#2563eb; padding:10px 14px; border-radius:12px; text-decoration:none; font-weight:900; }
     .links a.backupLink { color:#0f172a; background:#fde68a; }
     .readonly { background:#f8fafc; color:#475569; }
@@ -44,9 +43,9 @@
     </div>
 
     <section class="hero">
-      <span class="badge">4.4.0 — Client Editor + restore backup</span>
+      <span class="badge">4.5.0 — Client Editor + bezpečné smazání</span>
       <h1>Upravit existujícího klienta</h1>
-      <p>Vyber firmu, stáhni backup, bezpečně uprav profil a v případě chyby vrať starší verzi z backup souboru.</p>
+      <p>Vyber firmu, stáhni backup, uprav profil nebo bezpečně smaž testovacího klienta.</p>
     </section>
 
     <section class="panel">
@@ -110,15 +109,22 @@
       <a class="btn backup" id="backupSaveLink" href="/api/system/backup.json" target="_blank" rel="noreferrer">Stáhnout backup před uložením</a>
       <button id="saveBtn">Uložit klienta</button>
       <button class="secondary" id="reloadBtn">Vrátit poslední uloženou verzi</button>
-
-      <div class="restoreBox">
-        <h3>Obnovit z backupu</h3>
-        <p>Vyber dříve stažený backup JSON pro stejného klienta. Obnova přepíše aktuální profil vybraného klienta.</p>
-        <input id="restoreFile" type="file" accept="application/json,.json" />
-        <button class="restore" id="restoreBtn">Obnovit backup</button>
-      </div>
-
       <div class="links" id="links"></div>
+    </section>
+
+    <section class="panel" id="restorePanel" style="display:none">
+      <h2>Obnovit z backupu</h2>
+      <p>Vyber JSON backup stejného klienta. Obnova je povolena pouze pokud slug v backupu odpovídá vybranému klientovi.</p>
+      <input id="restoreFile" type="file" accept="application/json,.json" />
+      <button class="backup" id="restoreBtn">Obnovit backup</button>
+    </section>
+
+    <section class="panel" id="deletePanel" style="display:none">
+      <h2>Smazat testovacího klienta</h2>
+      <div class="dangerBox">Smazání odstraní profil klienta a jeho rezervace. Nejdřív stáhni backup. Hlavní demo profily jsou chráněné.</div>
+      <label for="deleteConfirm">Pro smazání napiš přesný slug klienta</label>
+      <input id="deleteConfirm" placeholder="slug-klienta" />
+      <button class="danger" id="deleteBtn">Smazat klienta</button>
     </section>
   </main>
 
@@ -192,7 +198,7 @@
     }
 
     function showEditor(show) {
-      ['editorPanel','servicesPanel','faqPanel','savePanel'].forEach((id) => { $(id).style.display = show ? 'block' : 'none'; });
+      ['editorPanel','servicesPanel','faqPanel','savePanel','restorePanel','deletePanel'].forEach((id) => { $(id).style.display = show ? 'block' : 'none'; });
     }
 
     async function loadBusinesses() {
@@ -226,7 +232,7 @@
       $('description').value = currentProfile.description || '';
       $('services').value = serviceRows(currentProfile.services);
       $('faq').value = faqRows(currentProfile.knowledgeBase);
-      $('restoreFile').value = '';
+      $('deleteConfirm').value = '';
       setLinks(currentProfile.businessSlug);
       showEditor(true);
       $('message').innerHTML = `<p class="ok">Profil načten: ${currentProfile.companyName}</p>`;
@@ -267,40 +273,62 @@
       $('message').innerHTML = `<p class="ok">Změny byly uloženy pro klienta ${updated.companyName}.</p>`;
     }
 
-    async function readRestoreFile() {
-      const file = $('restoreFile').files?.[0];
-      if (!file) throw new Error('Vyberte backup JSON soubor.');
-      const text = await file.text();
-      return JSON.parse(text);
-    }
-
     async function restoreBackup() {
       if (!currentProfile) return;
-      try {
-        const backup = await readRestoreFile();
-        const backupProfile = backup.profile || backup;
-        const backupSlug = backupProfile.businessSlug;
-        if (backupSlug !== currentProfile.businessSlug) {
-          $('message').innerHTML = `<p class="bad">Backup patří klientovi ${backupSlug || 'neznámý slug'}, ale vybraný klient je ${currentProfile.businessSlug}.</p>`;
-          return;
-        }
-        const confirmed = confirm(`Opravdu obnovit backup pro klienta ${currentProfile.companyName}? Aktuální profil bude přepsán.`);
-        if (!confirmed) return;
-        $('message').innerHTML = '<p class="warn">Obnovuji backup...</p>';
-        const res = await fetch(`/api/business-profile/restore?businessSlug=${encodeURIComponent(currentProfile.businessSlug)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(backup),
-        });
-        const data = await res.json();
-        if (!res.ok || !data.ok) throw new Error(data.message || 'Backup se nepodařilo obnovit.');
-        await loadBusinesses();
-        $('businessSelect').value = currentProfile.businessSlug;
-        await loadProfile();
-        $('message').innerHTML = `<p class="ok">Backup byl obnoven pro klienta ${backupProfile.companyName || currentProfile.companyName}.</p>`;
-      } catch (error) {
-        $('message').innerHTML = `<p class="bad">${error.message || 'Chyba při obnově backupu.'}</p>`;
+      const file = $('restoreFile').files?.[0];
+      if (!file) {
+        $('message').innerHTML = '<p class="bad">Nejdřív vyber backup JSON soubor.</p>';
+        return;
       }
+      const raw = await file.text();
+      const backup = JSON.parse(raw);
+      const backupSlug = backup.profile?.businessSlug || backup.businessSlug;
+      if (backupSlug !== currentProfile.businessSlug) {
+        $('message').innerHTML = `<p class="bad">Backup patří jinému slug-u: ${backupSlug || 'neznámý'}.</p>`;
+        return;
+      }
+      const confirmed = confirm(`Obnovit backup pro ${currentProfile.businessSlug}? Aktuální změny budou přepsány.`);
+      if (!confirmed) return;
+      $('message').innerHTML = '<p class="warn">Obnovuji backup...</p>';
+      const res = await fetch(`/api/business-profile/restore?businessSlug=${encodeURIComponent(currentProfile.businessSlug)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(backup),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        $('message').innerHTML = `<p class="bad">${data.message || 'Backup se nepodařilo obnovit.'}</p>`;
+        return;
+      }
+      await loadProfile();
+      $('message').innerHTML = `<p class="ok">Backup byl obnoven pro ${currentProfile.companyName}.</p>`;
+    }
+
+    async function deleteClient() {
+      if (!currentProfile) return;
+      const slug = currentProfile.businessSlug;
+      const confirmation = $('deleteConfirm').value.trim();
+      if (confirmation !== slug) {
+        $('message').innerHTML = '<p class="bad">Pro smazání napiš přesný slug vybraného klienta.</p>';
+        return;
+      }
+      const confirmed = confirm(`Opravdu smazat klienta ${slug}? Nejdřív musíš mít stažený backup.`);
+      if (!confirmed) return;
+      $('message').innerHTML = '<p class="warn">Mažu klienta...</p>';
+      const res = await fetch('/api/business-profile', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessSlug: slug, confirmation }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        $('message').innerHTML = `<p class="bad">${data.message || 'Klienta se nepodařilo smazat.'}</p>`;
+        return;
+      }
+      currentProfile = null;
+      showEditor(false);
+      await loadBusinesses();
+      $('message').innerHTML = `<p class="ok">Klient ${slug} byl smazán.</p>`;
     }
 
     $('businessSelect').addEventListener('change', () => {
@@ -312,6 +340,7 @@
     $('reloadBtn').onclick = loadProfile;
     $('saveBtn').onclick = saveProfile;
     $('restoreBtn').onclick = restoreBackup;
+    $('deleteBtn').onclick = deleteClient;
 
     loadBusinesses().then(loadProfile).catch((error) => {
       $('message').innerHTML = `<p class="bad">${error.message || 'Chyba při načítání klientů.'}</p>`;

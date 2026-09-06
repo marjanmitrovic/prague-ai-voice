@@ -12,6 +12,17 @@ function findBusinessSummary(businessSlug: string) {
   return listPublicBusinesses().find((business) => business.slug === businessSlug);
 }
 
+function profileFromRestoreBody(body: unknown): Record<string, unknown> {
+  const input = body as Record<string, unknown> | undefined;
+  if (!input) throw new Error('Backup data chybí.');
+  const nestedProfile = input.profile as Record<string, unknown> | undefined;
+  const profile = nestedProfile && typeof nestedProfile === 'object' ? nestedProfile : input;
+  if (!profile.businessSlug || !profile.companyName || !profile.services) {
+    throw new Error('Soubor nevypadá jako platný backup business profilu.');
+  }
+  return profile;
+}
+
 export async function businessProfileRoute(app: FastifyInstance): Promise<void> {
   app.get('/api/businesses', async () => {
     return { ok: true, businesses: listPublicBusinesses() };
@@ -79,6 +90,43 @@ export async function businessProfileRoute(app: FastifyInstance): Promise<void> 
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Profile create failed';
       return reply.code(400).send({ ok: false, error: 'invalid_business_profile', message });
+    }
+  });
+
+  app.post('/api/business-profile/restore', async (request, reply) => {
+    if (!(await requireAdmin(request, reply))) return;
+    try {
+      const body = request.body as Record<string, unknown>;
+      const restoredProfile = profileFromRestoreBody(body);
+      const bodySlug = safeBusinessSlug(String(restoredProfile.businessSlug));
+      const targetSlug = safeBusinessSlug(String(body.businessSlug || queryBusinessSlug(request.query) || bodySlug));
+
+      if (targetSlug !== bodySlug) {
+        return reply.code(400).send({
+          ok: false,
+          error: 'restore_slug_mismatch',
+          message: 'Backup patří jinému klientovi. Vyberte správný slug nebo použijte odpovídající backup.',
+          backupSlug: bodySlug,
+          targetSlug,
+        });
+      }
+
+      const existing = findBusinessSummary(targetSlug);
+      if (!existing) {
+        return reply.code(404).send({
+          ok: false,
+          error: 'business_profile_not_found',
+          message: 'Klient pro obnovu nebyl nalezen. Obnova je povolena pouze pro existující klienty.',
+          businessSlug: targetSlug,
+        });
+      }
+
+      const profile = await saveBusinessProfile({ ...restoredProfile, businessSlug: targetSlug }, targetSlug);
+      request.log.warn({ businessSlug: targetSlug, companyName: profile.companyName, services: profile.services.length }, 'Business profile restored from backup');
+      return { ok: true, restored: true, profile: publicBusinessProfile(profile) };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Profile restore failed';
+      return reply.code(400).send({ ok: false, error: 'invalid_business_profile_backup', message });
     }
   });
 

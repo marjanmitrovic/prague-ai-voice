@@ -285,6 +285,16 @@ export async function writeProfileJson(profileJson: string, businessSlug = DEFAU
   );
 }
 
+export async function deleteBusinessProfileData(businessSlug: string): Promise<void> {
+  ensureCacheLoaded();
+  const slug = safeBusinessSlug(businessSlug);
+  profileJsonCache.delete(slug);
+  bookingsCache = bookingsCache.filter((booking) => booking.business_slug !== slug);
+  if (!pool) return;
+  await pool.query('DELETE FROM bookings WHERE business_slug = $1', [slug]);
+  await pool.query('DELETE FROM business_profiles WHERE slug = $1', [slug]);
+}
+
 export function listBusinessSummaries(): BusinessSummary[] {
   ensureCacheLoaded();
   return [...profileJsonCache.entries()].map(([slug, profileJson]) => businessSummaryFromJson(slug, profileJson)).sort((a, b) => a.companyName.localeCompare(b.companyName));

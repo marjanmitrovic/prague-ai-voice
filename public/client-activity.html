@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Client Activity Log — Prague AI Voice</title>
+  <style>
+    :root { --bg:#f4f7fb; --panel:#fff; --text:#122033; --muted:#64748b; --border:#dbe3ee; --primary:#2563eb; --good:#047857; --warn:#b45309; --bad:#b91c1c; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter, Segoe UI, Arial, sans-serif; color:var(--text); background:linear-gradient(180deg,#f8fbff,var(--bg)); line-height:1.5; }
+    main { max-width:1180px; margin:0 auto; padding:28px; }
+    .topnav a { color:#1d4ed8; text-decoration:none; font-weight:900; margin-right:14px; }
+    .hero,.panel { background:var(--panel); border:1px solid var(--border); border-radius:22px; padding:20px; margin:0 0 18px; box-shadow:0 14px 35px rgba(15,23,42,.06); }
+    h1,h2,h3 { margin:0 0 10px; letter-spacing:-.02em; }
+    p { color:var(--muted); }
+    .badge { display:inline-flex; padding:4px 10px; border-radius:999px; background:#dcfce7; color:#047857; font-weight:900; font-size:13px; }
+    button,.btn { border:0; border-radius:14px; padding:11px 15px; font:inherit; font-weight:900; color:#fff; background:var(--primary); cursor:pointer; margin:8px 8px 0 0; text-decoration:none; display:inline-flex; }
+    input,select { width:100%; border:1px solid var(--border); border-radius:14px; padding:11px; font:inherit; background:#fff; }
+    label { display:block; font-weight:900; margin:10px 0 6px; }
+    .grid { display:grid; grid-template-columns:2fr 1fr; gap:14px; }
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    th,td { text-align:left; border-bottom:1px solid var(--border); padding:10px; vertical-align:top; }
+    th { font-size:13px; color:#475569; }
+    .empty { background:#f8fafc; border:1px dashed var(--border); border-radius:16px; padding:16px; color:var(--muted); }
+    .action { font-weight:900; white-space:nowrap; }
+    .client_created { color:#047857; }
+    .client_updated { color:#1d4ed8; }
+    .client_restored { color:#b45309; }
+    .client_deleted { color:#b91c1c; }
+    @media (max-width:900px){ main{padding:16px}.grid{grid-template-columns:1fr} table{font-size:14px} }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="topnav">
+      <a href="/admin">Admin</a>
+      <a href="/client-editor">Client Editor</a>
+      <a href="/client-profile-builder">Nový klient</a>
+      <a href="/clients">Klienti</a>
+    </div>
+
+    <section class="hero">
+      <span class="badge">4.6.0 — Client Activity Log</span>
+      <h1>Aktivita klientů</h1>
+      <p>Přehled posledních důležitých admin akcí: vytvoření klienta, úprava profilu, obnova backupu a smazání testovacího klienta.</p>
+    </section>
+
+    <section class="panel">
+      <div class="grid">
+        <div>
+          <label for="businessSelect">Filtrovat podle klienta</label>
+          <select id="businessSelect"><option value="">Všichni klienti</option></select>
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button id="loadBtn">Obnovit log</button>
+        </div>
+      </div>
+      <div id="message"></div>
+      <div id="activity"></div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"]/g, (ch) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[ch]));
+    }
+
+    function actionLabel(action) {
+      const labels = {
+        client_created: 'Vytvořeno',
+        client_updated: 'Upraveno',
+        client_restored: 'Obnoveno',
+        client_deleted: 'Smazáno',
+      };
+      return labels[action] || action;
+    }
+
+    function formatDate(value) {
+      try { return new Date(value).toLocaleString('cs-CZ'); } catch { return value || '—'; }
+    }
+
+    async function loadBusinesses() {
+      const res = await fetch('/api/businesses');
+      const data = await res.json();
+      const options = (data.businesses || []).map((business) => `<option value="${escapeHtml(business.slug)}">${escapeHtml(business.companyName)} — ${escapeHtml(business.slug)}</option>`).join('');
+      $('businessSelect').innerHTML = `<option value="">Všichni klienti</option>${options}`;
+    }
+
+    async function loadActivity() {
+      const slug = $('businessSelect').value;
+      const url = slug ? `/api/client-activity?businessSlug=${encodeURIComponent(slug)}` : '/api/client-activity';
+      $('message').innerHTML = '<p>Načítám aktivitu...</p>';
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        $('message').innerHTML = `<p>${escapeHtml(data.message || 'Aktivitu se nepodařilo načíst.')}</p>`;
+        return;
+      }
+      const entries = data.activity || [];
+      $('message').innerHTML = `<p>Záznamů: <b>${entries.length}</b></p>`;
+      if (!entries.length) {
+        $('activity').innerHTML = '<div class="empty">Zatím tu nejsou žádné admin akce. Nové záznamy vzniknou při vytvoření, úpravě, obnově nebo smazání klienta.</div>';
+        return;
+      }
+      $('activity').innerHTML = `
+        <table>
+          <thead><tr><th>Čas</th><th>Akce</th><th>Klient</th><th>Zpráva</th></tr></thead>
+          <tbody>${entries.map((entry) => `
+            <tr>
+              <td>${escapeHtml(formatDate(entry.createdAt))}</td>
+              <td class="action ${escapeHtml(entry.action)}">${escapeHtml(actionLabel(entry.action))}</td>
+              <td><b>${escapeHtml(entry.companyName)}</b><br><span>${escapeHtml(entry.businessSlug)}</span></td>
+              <td>${escapeHtml(entry.message)}</td>
+            </tr>`).join('')}</tbody>
+        </table>`;
+    }
+
+    $('loadBtn').onclick = loadActivity;
+    $('businessSelect').onchange = loadActivity;
+    loadBusinesses().then(loadActivity).catch((error) => {
+      $('message').innerHTML = `<p>${escapeHtml(error.message || 'Chyba při načítání.')}</p>`;
+    });
+  </script>
+</body>
+</html>

@@ -1,9 +1,9 @@
 {
   "name": "prague-ai-voice",
-  "version": "4.6.0",
+  "version": "4.7.0",
   "private": true,
   "type": "module",
-  "description": "Prague AI Voice - Client Activity Log za praćenje kreiranja, izmena, restore-a i brisanja klijenata",
+  "description": "Prague AI Voice - Telephony Setup Wizard za povezivanje telefona preko preusmeravanja nezvednutih hovorů",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",

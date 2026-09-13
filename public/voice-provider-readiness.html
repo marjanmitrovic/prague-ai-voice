@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Voice Provider Readiness — Prague AI Voice</title>
+  <style>
+    :root { --bg:#f4f7fb; --panel:#fff; --text:#122033; --muted:#64748b; --border:#dbe3ee; --primary:#2563eb; --good:#047857; --warn:#b45309; --bad:#b91c1c; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter, Segoe UI, Arial, sans-serif; color:var(--text); background:linear-gradient(180deg,#f8fbff,var(--bg)); line-height:1.5; }
+    main { max-width:1180px; margin:0 auto; padding:28px; }
+    .topnav a { color:#1d4ed8; text-decoration:none; font-weight:900; margin-right:14px; }
+    .hero,.panel { background:var(--panel); border:1px solid var(--border); border-radius:22px; padding:20px; margin:0 0 18px; box-shadow:0 14px 35px rgba(15,23,42,.06); }
+    h1,h2,h3 { margin:0 0 10px; letter-spacing:-.02em; }
+    p { color:var(--muted); }
+    .badge { display:inline-flex; padding:4px 10px; border-radius:999px; background:#dcfce7; color:#047857; font-weight:900; font-size:13px; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    label { display:block; font-weight:900; margin:10px 0 6px; }
+    input,textarea,select { width:100%; border:1px solid var(--border); border-radius:14px; padding:11px; font:inherit; background:#fff; }
+    textarea { min-height:120px; resize:vertical; }
+    button,.btn { border:0; border-radius:14px; padding:11px 15px; font:inherit; font-weight:900; color:#fff; background:var(--primary); cursor:pointer; margin:8px 8px 0 0; text-decoration:none; display:inline-flex; }
+    .secondary { color:#0f172a; background:#e8eef8; }
+    .warnBox { background:#fffbeb; border:1px solid #fde68a; border-radius:16px; padding:13px; color:#92400e; font-weight:800; margin:10px 0; }
+    .ok { color:var(--good); font-weight:900; }
+    .bad { color:var(--bad); font-weight:900; }
+    .warn { color:var(--warn); font-weight:900; }
+    .result { background:#0f172a; color:#e5e7eb; border-radius:16px; padding:14px; overflow:auto; white-space:pre-wrap; }
+    .checklist { display:grid; gap:10px; }
+    .item { display:grid; grid-template-columns:28px 1fr 170px; gap:10px; align-items:center; padding:10px; border:1px solid var(--border); border-radius:14px; background:#fff; }
+    .item input { width:auto; }
+    .score { font-size:34px; font-weight:1000; }
+    .pill { display:inline-flex; border:1px solid var(--border); border-radius:999px; padding:5px 10px; margin:4px 5px 0 0; background:#f8fafc; font-weight:900; }
+    @media (max-width:900px){ main{padding:16px}.grid{grid-template-columns:1fr}.item{grid-template-columns:24px 1fr} .item select{grid-column:1/3} }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="topnav">
+      <a href="/admin">Admin</a>
+      <a href="/telephony-setup">Telephony Setup</a>
+      <a href="/voice-webhook-test">Webhook test</a>
+      <a href="/call-leads">Leady</a>
+    </div>
+
+    <section class="hero">
+      <span class="badge">4.9.0 — Voice Provider Readiness</span>
+      <h1>Checklist pro výběr voice providera</h1>
+      <p>Interní pomůcka před pilotem: ověřit, jestli provider umí číslo, přesměrování, webhook, nahrávku, přepis, cenu a testovací provoz.</p>
+      <div class="warnBox">Toto není tvrzení o přímé integraci se všemi operátory. Je to praktický seznam pro výběr jednoho testovacího voice gateway providera.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Provider a pilot</h2>
+      <div class="grid">
+        <div>
+          <label for="providerName">Název providera</label>
+          <input id="providerName" value="Testovací voice provider" />
+        </div>
+        <div>
+          <label for="providerWebsite">Web / kontakt</label>
+          <input id="providerWebsite" value="" placeholder="https://... nebo e-mail" />
+        </div>
+        <div>
+          <label for="testNumber">Testovací AI číslo</label>
+          <input id="testNumber" value="+420 XXX XXX XXX" />
+        </div>
+        <div>
+          <label for="monthlyCost">Odhad měsíční ceny</label>
+          <input id="monthlyCost" value="do 500 Kč / měsíc pro pilot" />
+        </div>
+        <div>
+          <label for="webhookUrl">Webhook v Prague AI Voice</label>
+          <input id="webhookUrl" value="/api/voice/missed-call" />
+        </div>
+        <div>
+          <label for="pilotStatus">Stav</label>
+          <select id="pilotStatus">
+            <option>hledáme providera</option>
+            <option>čekáme na odpověď</option>
+            <option>máme účet</option>
+            <option>máme číslo</option>
+            <option>pilot připraven</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Readiness checklist</h2>
+      <p>Označ položky a nastav stav. Výsledek ukáže, jestli má smysl spustit pilot.</p>
+      <div class="checklist" id="checklist"></div>
+      <button id="calculateBtn">Přepočítat readiness</button>
+      <button class="secondary" id="copyBtn">Kopírovat report</button>
+      <button class="secondary" id="printBtn">Tisk / PDF</button>
+    </section>
+
+    <section class="panel">
+      <h2>Výsledek</h2>
+      <div class="score" id="score">0 %</div>
+      <p id="decision" class="warn">Vyplň checklist.</p>
+      <p><span class="pill">minimum pro pilot: číslo + webhook + test lead</span><span class="pill">STT může být ruční v první verzi</span><span class="pill">neprodávat jako direct operator integration</span></p>
+      <pre class="result" id="report"></pre>
+    </section>
+
+    <section class="panel">
+      <h2>Otázky pro providera</h2>
+      <textarea id="providerQuestions">Dobrý den,
+
+hledáme voice gateway pro malý pilot AI recepce v ČR. Potřebujeme ověřit:
+1) Umíte dodat české telefonní číslo nebo SIP číslo pro přesměrování nezvednutých hovorů?
+2) Umíte poslat webhook při příchozím hovoru nebo po skončení hovoru?
+3) Umíte předat telefon volajícího, čas hovoru a nahrávku nebo přepis?
+4) Je možné testovat bez dlouhé smlouvy?
+5) Jaká je orientační cena za číslo, minuty a případný přepis řeči?
+6) Lze webhook zabezpečit tokenem?
+
+Nechceme přímou integraci do všech operátorů. Stačí nám jeden stabilní gateway pro pilot.</textarea>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const checks = [
+      ['cz_number', 'České telefonní číslo nebo SIP číslo pro příjem přesměrovaných hovorů', 'must'],
+      ['missed_forwarding', 'Funguje přesměrování nezvednutých hovorů z běžného čísla klienta', 'must'],
+      ['webhook', 'Provider umí HTTP webhook při hovoru nebo po hovoru', 'must'],
+      ['caller_id', 'Webhook předá číslo volajícího', 'must'],
+      ['recording', 'Provider umí nahrávku hovoru nebo odkaz na nahrávku', 'important'],
+      ['stt', 'Provider umí STT / přepis řeči, nebo lze napojit vlastní přepis později', 'important'],
+      ['token', 'Webhook lze zabezpečit tokenem nebo tajným URL', 'must'],
+      ['test_account', 'Lze založit testovací účet bez dlouhé smlouvy', 'important'],
+      ['price', 'Cena za pilot je přijatelná a srozumitelná', 'must'],
+      ['cz_language', 'Český jazyk v hovoru a přepisu je prakticky použitelný', 'important'],
+      ['manual_test', 'Proběhl manuální test: hovor → webhook → lead v /call-leads', 'must'],
+      ['support', 'Provider má podporu nebo dokumentaci pro webhook/SIP', 'nice'],
+    ];
+
+    function renderChecklist() {
+      $('checklist').innerHTML = checks.map(([id, label, weight]) => `
+        <div class="item">
+          <input type="checkbox" id="${id}" />
+          <label for="${id}">${label}</label>
+          <select id="${id}_status">
+            <option value="neověřeno">neověřeno</option>
+            <option value="čekáme">čekáme</option>
+            <option value="funguje">funguje</option>
+            <option value="nefunguje">nefunguje</option>
+          </select>
+        </div>
+      `).join('');
+    }
+
+    function calculate() {
+      let max = 0;
+      let score = 0;
+      const rows = checks.map(([id, label, weight]) => {
+        const points = weight === 'must' ? 3 : weight === 'important' ? 2 : 1;
+        max += points;
+        const checked = $(id).checked;
+        const status = $(`${id}_status`).value;
+        if (checked && status === 'funguje') score += points;
+        return `- ${checked && status === 'funguje' ? 'OK' : 'CHYBÍ'} ${label} [${status}]`;
+      });
+      const percent = Math.round((score / max) * 100);
+      $('score').textContent = `${percent} %`;
+      const missingMust = checks.filter(([id,, weight]) => weight === 'must' && (!$(id).checked || $(`${id}_status`).value !== 'funguje'));
+      if (percent >= 80 && missingMust.length === 0) {
+        $('decision').textContent = 'Pilot může začít. Provider je technicky dostatečně připravený.';
+        $('decision').className = 'ok';
+      } else if (percent >= 55) {
+        $('decision').textContent = 'Ještě nespouštět ostrý pilot. Doplnit chybějící must-have položky.';
+        $('decision').className = 'warn';
+      } else {
+        $('decision').textContent = 'Provider zatím není připravený pro pilot.';
+        $('decision').className = 'bad';
+      }
+      $('report').textContent = [
+        `Provider: ${$('providerName').value.trim() || '—'}`,
+        `Kontakt: ${$('providerWebsite').value.trim() || '—'}`,
+        `Testovací číslo: ${$('testNumber').value.trim() || '—'}`,
+        `Cena: ${$('monthlyCost').value.trim() || '—'}`,
+        `Webhook: ${$('webhookUrl').value.trim() || '/api/voice/missed-call'}`,
+        `Stav: ${$('pilotStatus').value}`,
+        `Readiness: ${percent} %`,
+        `Rozhodnutí: ${$('decision').textContent}`,
+        '',
+        ...rows,
+        '',
+        'Poznámka: Prodávat jako missed-call forwarding + single voice gateway, ne jako přímé napojení na všechny operátory.',
+      ].join('\n');
+    }
+
+    async function copyReport() {
+      calculate();
+      const text = `${$('report').textContent}\n\n--- Otázky pro providera ---\n${$('providerQuestions').value}`;
+      await navigator.clipboard.writeText(text);
+      $('decision').textContent = 'Report zkopírován.';
+      $('decision').className = 'ok';
+    }
+
+    renderChecklist();
+    $('calculateBtn').onclick = calculate;
+    $('copyBtn').onclick = copyReport;
+    $('printBtn').onclick = () => window.print();
+    document.querySelectorAll('input,select,textarea').forEach((el) => el.addEventListener('input', calculate));
+    calculate();
+  </script>
+</body>
+</html>

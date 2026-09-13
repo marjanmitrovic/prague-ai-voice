@@ -7,6 +7,8 @@ async function sendPublicAsset(reply: FastifyReply, relativePath: string, conten
   try {
     const filePath = path.resolve(process.cwd(), 'public', relativePath);
     const file = await readFile(filePath);
+    const noStore = relativePath.endsWith('.html') || relativePath === 'admin.webmanifest' || relativePath === 'admin-sw.js';
+    if (noStore) reply.header('Cache-Control', 'no-store, max-age=0');
     return reply.type(contentType).send(file);
   } catch {
     return reply.code(404).send({ error: 'not_found' });
@@ -35,7 +37,7 @@ export async function adminPwaRoute(app: FastifyInstance): Promise<void> {
   app.get('/admin-sw.js', async (_request, reply) => {
     return reply
       .header('Service-Worker-Allowed', '/')
-      .header('Cache-Control', 'no-cache')
+      .header('Cache-Control', 'no-store, max-age=0')
       .type('application/javascript; charset=utf-8')
       .send(await readFile(path.resolve(process.cwd(), 'public', 'admin-sw.js'), 'utf8'));
   });

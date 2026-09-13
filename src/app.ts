@@ -19,6 +19,7 @@ import { clientProfileBuilderRoute } from './routes/client-profile-builder.route
 import { clientEditorRoute } from './routes/client-editor.route.js';
 import { clientActivityRoute } from './routes/client-activity.route.js';
 import { telephonySetupRoute } from './routes/telephony-setup.route.js';
+import { voiceProviderReadinessRoute } from './routes/voice-provider-readiness.route.js';
 import { adminPwaRoute } from './routes/admin-pwa.route.js';
 import { browserVoiceRoute } from './websocket/browser-voice.route.js';
 import { initializeStorage } from './storage-postgres.js';
@@ -48,6 +49,7 @@ export async function buildApp() {
   await app.register(clientEditorRoute);
   await app.register(clientActivityRoute);
   await app.register(telephonySetupRoute);
+  await app.register(voiceProviderReadinessRoute);
   await app.register(adminPwaRoute);
   await app.register(browserVoiceRoute);
 

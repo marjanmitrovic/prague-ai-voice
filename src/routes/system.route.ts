@@ -36,8 +36,8 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
 
     return {
       ok: true,
-      version: '4.7.0',
-      mode: 'telephony-setup-wizard-for-missed-call-forwarding-no-paid-llm',
+      version: '4.7.1',
+      mode: 'telephony-setup-wizard-static-version-fixed-no-paid-llm',
       storage: storageInfo.mode,
       databaseUrlConfigured: storageInfo.databaseUrlConfigured,
       telephony: 'voice-gateway-webhook-ready',
@@ -45,6 +45,8 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
       telephonySetupWizardReady: true,
       telephonySetupMode: 'missed-call-forwarding-with-single-voice-gateway',
       operatorDirectIntegrations: false,
+      staticRuntimeVersionFixed: true,
+      staticAppVersion: '4.7.1',
       voiceGatewayWebhook: '/api/voice/missed-call',
       voiceWebhookTestPage: '/voice-webhook-test',
       voiceGatewayTokenConfigured,
@@ -95,6 +97,7 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
         telephonySetupWizard: true,
         missedCallForwardingSetup: true,
         operatorDirectIntegrations: false,
+        staticRuntimeVersionFixed: true,
         clientProfileBuilder: true,
         clientEditor: true,
         clientActivityLog: true,

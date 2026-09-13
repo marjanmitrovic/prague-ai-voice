@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#2563eb" />
+  <link rel="manifest" href="/admin.webmanifest" />
   <title>Admin dashboard — Prague AI Voice</title>
   <style>
     :root { --bg:#f4f7fb; --panel:#fff; --text:#122033; --muted:#64748b; --border:#dbe3ee; --primary:#2563eb; --good:#047857; --warn:#b45309; --bad:#b91c1c; }
@@ -32,13 +34,14 @@
   <main>
     <div class="topnav">
       <a href="/">Veřejná stránka</a>
+      <a href="/admin-app">Mobilní admin app</a>
       <a href="/sales-presentation">Prodejní prezentace</a>
       <a href="/phone-connection">Telefonní napojení</a>
       <a href="/booking">Rezervace</a>
     </div>
 
     <section class="hero">
-      <span class="badge">4.7.1 — Admin dashboard</span>
+      <span class="badge">4.8.0 — Admin dashboard</span>
       <h1>Admin dashboard</h1>
       <p>Centrální rozcestník pro provoz, testy, leady, onboarding a nastavení Prague AI Voice.</p>
       <button id="loadStatusBtn">Obnovit stav</button>
@@ -52,6 +55,7 @@
     </section>
 
     <section class="grid">
+      <div class="card"><div><h3>Admin PWA</h3><p>Mobilní admin aplikace bez Google Play a App Store. Přidání na plochu telefonu.</p></div><a class="btn" href="/admin-app">Otevřít</a></div>
       <div class="card"><div><h3>Telephony Setup Wizard</h3><p>Postup pro přesměrování nezvednutých hovorů přes O2, T-Mobile, Vodafone nebo jiného operátora.</p></div><a class="btn" href="/telephony-setup">Otevřít</a></div>
       <div class="card"><div><h3>Client Profile Builder</h3><p>Vytvoření nové firmy, služeb, FAQ a booking odkazu bez ruční úpravy kódu.</p></div><a class="btn" href="/client-profile-builder">Otevřít</a></div>
       <div class="card"><div><h3>Client Editor</h3><p>Úprava existující firmy: služby, ceny, pracovní doba, popis, adresa a FAQ.</p></div><a class="btn" href="/client-editor">Otevřít</a></div>
@@ -101,6 +105,10 @@
     async function logout() {
       await fetch('/api/admin/logout', { method: 'POST' }).catch(() => null);
       location.href = '/admin-login?next=/admin';
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/admin-sw.js').catch(() => undefined);
     }
 
     document.getElementById('loadStatusBtn').onclick = loadStatus;

@@ -3,82 +3,164 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=200" />
-  <title>Správa klientů — Prague AI Voice</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=500" />
+  <title>Client Manager — Prague AI Voice</title>
   <style>
-    :root{--bg:#f4f7fb;--panel:#fff;--text:#122033;--muted:#64748b;--border:#dbe3ee;--primary:#2563eb;--primary-dark:#1d4ed8;--good:#0f8a3b;--danger:#b91c1c;--radius:18px;--shadow:0 18px 45px rgba(15,23,42,.08);font-family:Inter,Segoe UI,Arial,sans-serif}*{box-sizing:border-box}body{margin:0;color:var(--text);background:radial-gradient(circle at top left,rgba(37,99,235,.12),transparent 32rem),linear-gradient(180deg,#f8fbff 0%,var(--bg) 100%);line-height:1.5}a{color:var(--primary);text-decoration:none;font-weight:800}.wrap{max-width:1180px;margin:0 auto;padding:28px}.top{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:22px}.top h1{margin:0;font-size:38px;letter-spacing:-.04em}.site-logo{width:230px;max-width:100%;background:#fff;border-radius:16px;padding:8px 12px;border:1px solid var(--border);box-shadow:0 10px 24px rgba(15,23,42,.08);margin-bottom:14px}.top p,.small{color:var(--muted)}.actions{display:flex;gap:10px;flex-wrap:wrap}.button,button{border:0;border-radius:13px;padding:11px 15px;cursor:pointer;color:#fff;background:var(--primary);font-weight:900;font-size:15px;text-decoration:none;display:inline-flex;justify-content:center;align-items:center}.button:hover,button:hover{background:var(--primary-dark)}.secondary{background:#e8eef8!important;color:var(--text)!important}.panel{background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:18px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 10px 28px rgba(15,23,42,.05)}.card h3{margin:0 0 6px}.pill{display:inline-flex;padding:4px 9px;border-radius:999px;background:#ecfdf5;color:#047857;font-size:12px;font-weight:900}.links{display:grid;gap:8px;margin-top:12px}.linkbox{border:1px dashed var(--border);border-radius:12px;padding:10px;background:#f8fafc;word-break:break-all}.status{font-weight:850}.ok{color:var(--good)}.empty{border:1px dashed var(--border);border-radius:14px;padding:18px;color:var(--muted);background:#f8fafc}.tablewrap{overflow:auto}.table{width:100%;border-collapse:collapse}.table th,.table td{border-bottom:1px solid var(--border);padding:10px;text-align:left;font-size:14px}.table th{color:var(--muted);font-weight:900}@media(max-width:900px){.top{display:block}.grid{grid-template-columns:1fr}.actions{margin-top:14px}}
+    :root{--bg:#f4f7fb;--panel:#fff;--text:#122033;--muted:#64748b;--border:#dbe3ee;--primary:#2563eb;--primary-dark:#1d4ed8;--good:#047857;--warn:#b45309;--danger:#b91c1c;--radius:18px;--shadow:0 18px 45px rgba(15,23,42,.08);font-family:Inter,Segoe UI,Arial,sans-serif}
+    *{box-sizing:border-box}body{margin:0;color:var(--text);background:radial-gradient(circle at top left,rgba(37,99,235,.12),transparent 32rem),linear-gradient(180deg,#f8fbff 0%,var(--bg) 100%);line-height:1.5}a{color:var(--primary);text-decoration:none;font-weight:800}.wrap{max-width:1240px;margin:0 auto;padding:28px}.top{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:22px}.top h1{margin:0;font-size:38px;letter-spacing:-.04em}.site-logo{width:230px;max-width:100%;background:#fff;border-radius:16px;padding:8px 12px;border:1px solid var(--border);box-shadow:0 10px 24px rgba(15,23,42,.08);margin-bottom:14px}.top p,.small{color:var(--muted)}.badge{display:inline-flex;padding:4px 10px;border-radius:999px;background:#dcfce7;color:#047857;font-weight:900;font-size:13px;margin-bottom:10px}.actions{display:flex;gap:10px;flex-wrap:wrap}.button,button{border:0;border-radius:13px;padding:10px 13px;cursor:pointer;color:#fff;background:var(--primary);font-weight:900;font-size:14px;text-decoration:none;display:inline-flex;justify-content:center;align-items:center}.button:hover,button:hover{background:var(--primary-dark)}.secondary{background:#e8eef8!important;color:var(--text)!important}.danger{background:var(--danger)!important}.panel{background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:18px}.toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:end;margin:12px 0 16px}label{display:block;font-weight:900;margin:0 0 5px}input,select{width:100%;border:1px solid var(--border);border-radius:13px;padding:10px 12px;font:inherit;background:#fff}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.stat{background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px}.stat span{display:block;color:var(--muted);font-size:13px}.stat b{font-size:22px}.pill{display:inline-flex;padding:4px 9px;border-radius:999px;background:#ecfdf5;color:#047857;font-size:12px;font-weight:900}.pill.warn{background:#fffbeb;color:#92400e}.tablewrap{overflow:auto;border:1px solid var(--border);border-radius:16px;background:#fff}.table{width:100%;border-collapse:collapse;min-width:980px}.table th,.table td{border-bottom:1px solid var(--border);padding:10px;text-align:left;font-size:14px;vertical-align:top}.table th{color:var(--muted);font-weight:900;background:#f8fafc}.table tr:last-child td{border-bottom:0}.row-actions{display:flex;gap:6px;flex-wrap:wrap}.row-actions .button,.row-actions button{padding:8px 10px;font-size:13px}.empty{border:1px dashed var(--border);border-radius:14px;padding:18px;color:var(--muted);background:#f8fafc}.bookingsTitle{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}.copyMsg{font-weight:900;color:var(--good);margin-left:8px}@media(max-width:900px){.wrap{padding:16px}.top{display:block}.toolbar,.grid{grid-template-columns:1fr}.table{min-width:760px}.actions{margin-top:14px}}
   </style>
 </head>
 <body>
   <main class="wrap">
     <section class="top">
       <div>
-        <img class="site-logo" src="/assets/prague-ai-voice-logo.svg?v=200" alt="Prague AI Voice" />
-        <h1>Správa klientů</h1>
-        <p>Přehled firem, rezervačních odkazů a rezervací bez technických výpisů.</p>
+        <img class="site-logo" src="/assets/prague-ai-voice-logo.svg?v=500" alt="Prague AI Voice" />
+        <span class="badge">5.0.0 — Client Manager</span>
+        <h1>Client Manager</h1>
+        <p>Operativní přehled klientů: demo, booking, leady, editor, telefonní nastavení a backup z jednoho místa.</p>
       </div>
       <div class="actions">
-        <a class="button secondary" href="/">Ovládací panel</a>
-        <a class="button secondary" href="/onboarding">Přidat klienta</a>
-        <a class="button secondary" href="/weaknesses">Test slabin</a>
-        <a class="button secondary" href="/sales">Prodejní stránka</a>
+        <a class="button secondary" href="/admin">Admin</a>
+        <a class="button" href="/client-profile-builder">Nový klient</a>
+        <a class="button secondary" href="/client-editor">Client Editor</a>
+        <a class="button secondary" href="/telephony-setup">Telefonní nastavení</a>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="grid">
+        <div class="stat"><span>Klienti</span><b id="clientCount">—</b></div>
+        <div class="stat"><span>Služby celkem</span><b id="serviceCount">—</b></div>
+        <div class="stat"><span>Vybraný klient</span><b id="selectedStat">—</b></div>
+        <div class="stat"><span>Status</span><b id="statusStat">Načítám</b></div>
       </div>
     </section>
 
     <section class="panel">
       <h2>Klienti</h2>
-      <p class="small">Vyberte klienta pro otevření jeho rezervační stránky, stažení CSV nebo zobrazení rezervací.</p>
-      <div id="clients" class="grid"></div>
+      <p class="small">Rychlé akce pro každý klientský profil. Interní odkazy se otevírají ve stejném okně.</p>
+      <div class="toolbar">
+        <div>
+          <label for="searchInput">Hledat klienta</label>
+          <input id="searchInput" placeholder="Název, slug nebo popis" />
+        </div>
+        <button id="reloadBtn" type="button" class="secondary">Obnovit</button>
+        <button id="copyAllBtn" type="button">Kopírovat přehled</button>
+      </div>
+      <div id="clientsTable" class="tablewrap"></div>
       <div id="clientsEmpty" class="empty" style="display:none">Zatím nejsou načteni žádní klienti.</div>
     </section>
 
     <section class="panel">
-      <h2>Rezervace vybraného klienta</h2>
-      <p id="selectedClient" class="small">Vyberte klienta výše.</p>
-      <div id="bookings" class="tablewrap"></div>
+      <div class="bookingsTitle">
+        <div>
+          <h2>Rezervace vybraného klienta</h2>
+          <p id="selectedClient" class="small">Vyberte klienta výše.</p>
+        </div>
+        <div id="bookingActions" class="actions"></div>
+      </div>
+      <div id="bookings" class="tablewrap" style="display:none"></div>
+      <div id="bookingsEmpty" class="empty">Po kliknutí na „Rezervace“ se zobrazí rezervace vybraného klienta.</div>
     </section>
   </main>
 
 <script>
-const clientsEl = document.getElementById('clients');
+const clientsTable = document.getElementById('clientsTable');
 const emptyEl = document.getElementById('clientsEmpty');
 const bookingsEl = document.getElementById('bookings');
+const bookingsEmpty = document.getElementById('bookingsEmpty');
 const selectedClientEl = document.getElementById('selectedClient');
-function esc(s){ return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+const bookingActions = document.getElementById('bookingActions');
+const searchInput = document.getElementById('searchInput');
+const statusStat = document.getElementById('statusStat');
+let businesses = [];
+let selectedSlug = '';
+
+function esc(value){ return String(value ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function originUrl(path){ return `${location.origin}${path}`; }
 function bookingUrl(slug){ return `/booking/${encodeURIComponent(slug)}`; }
-async function copyText(text){ try{ await navigator.clipboard.writeText(location.origin + text); alert('Odkaz zkopírován.'); }catch{ prompt('Zkopírujte odkaz:', location.origin + text); } }
+function demoUrl(slug){ return `/?businessSlug=${encodeURIComponent(slug)}`; }
+function leadsUrl(slug){ return `/call-leads?businessSlug=${encodeURIComponent(slug)}`; }
+function editorUrl(slug){ return `/client-editor?businessSlug=${encodeURIComponent(slug)}`; }
+function backupUrl(slug){ return `/api/system/backup.json?businessSlug=${encodeURIComponent(slug)}`; }
+function telephonyUrl(slug){ return `/telephony-setup?businessSlug=${encodeURIComponent(slug)}`; }
+
+async function copyText(text){
+  const value = text.startsWith('http') ? text : originUrl(text);
+  try{ await navigator.clipboard.writeText(value); showStatus('Zkopírováno'); }
+  catch{ prompt('Zkopírujte odkaz:', value); }
+}
+function showStatus(text){ statusStat.textContent = text; setTimeout(() => statusStat.textContent = 'OK', 1600); }
+
+function filteredBusinesses(){
+  const term = searchInput.value.trim().toLowerCase();
+  if(!term) return businesses;
+  return businesses.filter(b => [b.slug,b.companyName,b.description].some(v => String(v || '').toLowerCase().includes(term)));
+}
+
+function renderClients(){
+  const rows = filteredBusinesses();
+  emptyEl.style.display = rows.length ? 'none' : 'block';
+  clientsTable.style.display = rows.length ? 'block' : 'none';
+  document.getElementById('clientCount').textContent = businesses.length;
+  document.getElementById('serviceCount').textContent = businesses.reduce((sum,b) => sum + Number(b.servicesCount || 0), 0);
+  document.getElementById('selectedStat').textContent = selectedSlug || '—';
+  if(!rows.length){ clientsTable.innerHTML = ''; return; }
+  clientsTable.innerHTML = `<table class="table"><thead><tr><th>Klient</th><th>Slug</th><th>Služby</th><th>Rychlé akce</th><th>Odkazy</th></tr></thead><tbody>${rows.map(b => {
+    const slug = String(b.slug || '');
+    return `<tr>
+      <td><b>${esc(b.companyName)}</b><br><span class="small">${esc(b.description || 'Bez popisu')}</span></td>
+      <td><span class="pill">${esc(slug)}</span></td>
+      <td>${esc(b.servicesCount || 0)}</td>
+      <td><div class="row-actions">
+        <a class="button" href="${editorUrl(slug)}">Editor</a>
+        <button class="secondary" type="button" onclick="loadBookings('${esc(slug)}','${esc(b.companyName)}')">Rezervace</button>
+        <a class="button secondary" href="${leadsUrl(slug)}">Leady</a>
+        <a class="button secondary" href="${telephonyUrl(slug)}">Telefon</a>
+        <a class="button secondary" href="${backupUrl(slug)}">Backup</a>
+      </div></td>
+      <td><div class="row-actions">
+        <a class="button secondary" href="${demoUrl(slug)}">Demo</a>
+        <a class="button secondary" href="${bookingUrl(slug)}">Booking</a>
+        <button class="secondary" type="button" onclick="copyText('${bookingUrl(slug)}')">Kopírovat booking</button>
+      </div></td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
+}
+
 async function loadClients(){
+  statusStat.textContent = 'Načítám';
   const res = await fetch('/api/businesses');
   const data = await res.json();
-  const businesses = data.businesses || [];
-  emptyEl.style.display = businesses.length ? 'none' : 'block';
-  clientsEl.innerHTML = businesses.map(b => {
-    const url = bookingUrl(b.slug);
-    return `<article class="card">
-      <span class="pill">${esc(b.servicesCount)} služeb</span>
-      <h3>${esc(b.companyName)}</h3>
-      <p class="small">${esc(b.description || 'Bez popisu')}</p>
-      <div class="linkbox">${esc(url)}</div>
-      <div class="links">
-        <a class="button" href="${url}" target="_blank" rel="noreferrer">Otevřít rezervaci</a>
-        <button class="secondary" type="button" onclick="copyText('${url}')">Kopírovat odkaz</button>
-        <button type="button" onclick="loadBookings('${esc(b.slug)}','${esc(b.companyName)}')">Zobrazit rezervace</button>
-        <a class="button secondary" href="/api/bookings/export.csv?businessSlug=${encodeURIComponent(b.slug)}">Stáhnout CSV</a>
-        <a class="button secondary" href="/api/system/backup.json?businessSlug=${encodeURIComponent(b.slug)}">Stáhnout zálohu</a>
-      </div>
-    </article>`;
-  }).join('');
+  businesses = data.businesses || [];
+  statusStat.textContent = 'OK';
+  renderClients();
 }
+
 async function loadBookings(slug, name){
+  selectedSlug = slug;
   selectedClientEl.textContent = `${name} · ${slug}`;
-  bookingsEl.innerHTML = '<p class="small">Načítám rezervace...</p>';
+  document.getElementById('selectedStat').textContent = slug;
+  bookingsEl.style.display = 'block';
+  bookingsEmpty.style.display = 'none';
+  bookingsEl.innerHTML = '<p class="small" style="padding:12px">Načítám rezervace...</p>';
+  bookingActions.innerHTML = `<a class="button secondary" href="${bookingUrl(slug)}">Booking</a><a class="button secondary" href="${leadsUrl(slug)}">Leady</a><a class="button secondary" href="/api/bookings/export.csv?businessSlug=${encodeURIComponent(slug)}">CSV</a>`;
   const res = await fetch(`/api/bookings?businessSlug=${encodeURIComponent(slug)}`);
   const data = await res.json();
   const bookings = data.bookings || [];
-  if(!bookings.length){ bookingsEl.innerHTML = '<div class="empty">Tento klient zatím nemá žádné rezervace.</div>'; return; }
-  bookingsEl.innerHTML = `<table class="table"><thead><tr><th>Datum</th><th>Čas</th><th>Služba</th><th>Jméno</th><th>Telefon</th><th>Stav</th></tr></thead><tbody>${bookings.map(b => `<tr><td>${esc(b.date)}</td><td>${esc(b.time)}</td><td>${esc(b.serviceName)}</td><td>${esc(b.customerName)}</td><td>${esc(b.customerPhone)}</td><td>${esc(b.status)}</td></tr>`).join('')}</tbody></table>`;
+  if(!bookings.length){ bookingsEl.style.display='none'; bookingsEmpty.style.display='block'; bookingsEmpty.textContent='Tento klient zatím nemá žádné rezervace.'; return; }
+  bookingsEl.innerHTML = `<table class="table"><thead><tr><th>Datum</th><th>Čas</th><th>Služba</th><th>Jméno</th><th>Telefon</th><th>E-mail</th><th>Stav</th></tr></thead><tbody>${bookings.map(b => `<tr><td>${esc(b.date)}</td><td>${esc(b.time)}</td><td>${esc(b.serviceName)}</td><td>${esc(b.customerName)}</td><td>${esc(b.customerPhone)}</td><td>${esc(b.customerEmail || '')}</td><td>${esc(b.status)}</td></tr>`).join('')}</tbody></table>`;
 }
-loadClients().catch(() => { emptyEl.style.display='block'; emptyEl.textContent='Nepodařilo se načíst klienty.'; });
+
+async function copyAll(){
+  const lines = businesses.map(b => `${b.companyName} | ${b.slug} | ${originUrl(bookingUrl(b.slug))} | ${originUrl(editorUrl(b.slug))}`);
+  await copyText(lines.join('\n'));
+}
+
+searchInput.addEventListener('input', renderClients);
+document.getElementById('reloadBtn').onclick = loadClients;
+document.getElementById('copyAllBtn').onclick = copyAll;
+loadClients().catch((error) => { statusStat.textContent='Chyba'; emptyEl.style.display='block'; emptyEl.textContent=error.message || 'Nepodařilo se načíst klienty.'; });
 </script>
 </body>
 </html>

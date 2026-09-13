@@ -1,9 +1,9 @@
 {
   "name": "prague-ai-voice",
-  "version": "4.9.2",
+  "version": "5.0.0",
   "private": true,
   "type": "module",
-  "description": "Prague AI Voice - hard cache bust i uklanjanje otvaranja admin linkova u novim tabovima",
+  "description": "Prague AI Voice - Client Manager za operativni rad sa klijentima, bookingom, leadovima, editorom, telefonijom i backupom",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",

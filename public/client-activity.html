@@ -34,15 +34,15 @@
   <main>
     <div class="topnav">
       <a href="/admin">Admin</a>
+      <a href="/clients">Klienti</a>
       <a href="/client-editor">Client Editor</a>
       <a href="/client-profile-builder">Nový klient</a>
-      <a href="/clients">Klienti</a>
     </div>
 
     <section class="hero">
-      <span class="badge">4.6.0 — Client Activity Log</span>
+      <span class="badge">5.1.0 — Client Activity Log</span>
       <h1>Aktivita klientů</h1>
-      <p>Přehled posledních důležitých admin akcí: vytvoření klienta, úprava profilu, obnova backupu a smazání testovacího klienta.</p>
+      <p>Přehled posledních důležitých admin akcí. Přímý odkaz z Client Manageru umí rovnou filtrovat konkrétního klienta.</p>
     </section>
 
     <section class="panel">
@@ -63,18 +63,14 @@
 
   <script>
     const $ = (id) => document.getElementById(id);
+    const initialBusinessSlug = new URLSearchParams(location.search).get('businessSlug') || '';
 
     function escapeHtml(value) {
       return String(value || '').replace(/[&<>"]/g, (ch) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[ch]));
     }
 
     function actionLabel(action) {
-      const labels = {
-        client_created: 'Vytvořeno',
-        client_updated: 'Upraveno',
-        client_restored: 'Obnoveno',
-        client_deleted: 'Smazáno',
-      };
+      const labels = { client_created: 'Vytvořeno', client_updated: 'Upraveno', client_restored: 'Obnoveno', client_deleted: 'Smazáno' };
       return labels[action] || action;
     }
 
@@ -87,6 +83,9 @@
       const data = await res.json();
       const options = (data.businesses || []).map((business) => `<option value="${escapeHtml(business.slug)}">${escapeHtml(business.companyName)} — ${escapeHtml(business.slug)}</option>`).join('');
       $('businessSelect').innerHTML = `<option value="">Všichni klienti</option>${options}`;
+      if (initialBusinessSlug && [...$('businessSelect').options].some((option) => option.value === initialBusinessSlug)) {
+        $('businessSelect').value = initialBusinessSlug;
+      }
     }
 
     async function loadActivity() {
@@ -100,9 +99,9 @@
         return;
       }
       const entries = data.activity || [];
-      $('message').innerHTML = `<p>Záznamů: <b>${entries.length}</b></p>`;
+      $('message').innerHTML = slug ? `<p>Klient: <b>${escapeHtml(slug)}</b> · záznamů: <b>${entries.length}</b></p>` : `<p>Záznamů: <b>${entries.length}</b></p>`;
       if (!entries.length) {
-        $('activity').innerHTML = '<div class="empty">Zatím tu nejsou žádné admin akce. Nové záznamy vzniknou při vytvoření, úpravě, obnově nebo smazání klienta.</div>';
+        $('activity').innerHTML = '<div class="empty">Zatím tu nejsou žádné admin akce pro vybraný filtr.</div>';
         return;
       }
       $('activity').innerHTML = `

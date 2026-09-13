@@ -5,7 +5,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { env } from '../config/env.js';
 
 const publicDir = path.resolve(process.cwd(), 'public');
-const APP_VERSION = '5.1.0';
+const APP_VERSION = '5.2.0';
 const ADMIN_COOKIE_NAME = 'pav_admin_session';
 const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
 
@@ -162,10 +162,12 @@ export async function staticRoute(app: FastifyInstance): Promise<void> {
   app.get('/sales', async (_request, reply) => sendPublicFile(reply, 'landing.html'));
   app.get('/landing', async (_request, reply) => sendPublicFile(reply, 'landing.html'));
   app.get('/cs', async (_request, reply) => sendPublicFile(reply, 'landing.html'));
+
   app.get('/favicon.svg', async (_request, reply) => sendPublicFile(reply, 'assets/favicon.svg'));
   app.get('/favicon.png', async (_request, reply) => sendPublicFile(reply, 'assets/favicon.png'));
   app.get('/site.webmanifest', async (_request, reply) => sendPublicFile(reply, 'site.webmanifest'));
   app.get('/assets/*', async (request: FastifyRequest<{ Params: { '*': string } }>, reply) => sendPublicFile(reply, `assets/${request.params['*']}`));
+
   app.get('/admin-login', async (_request, reply) => sendPublicFile(reply, 'admin-login.html'));
   app.post('/api/admin/session', async (request: FastifyRequest<{ Body: { password?: string } }>, reply) => {
     if (!adminPasswordConfigured()) return reply.code(503).send({ ok: false, error: 'admin_password_not_configured', message: 'ADMIN_PASSWORD není nastaveno.' });
@@ -182,26 +184,34 @@ export async function staticRoute(app: FastifyInstance): Promise<void> {
   app.get('/admin', async (request, reply) => sendAdminFile(request, reply, 'admin.html'));
   app.get('/dashboard', async (request, reply) => sendAdminFile(request, reply, 'admin.html'));
   app.get('/admin-dashboard', async (request, reply) => sendAdminFile(request, reply, 'admin.html'));
+
   app.get('/client-onboarding-pack', async (request, reply) => sendAdminFile(request, reply, 'client-onboarding-pack.html'));
   app.get('/admin/client-onboarding-pack', async (request, reply) => sendAdminFile(request, reply, 'client-onboarding-pack.html'));
   app.get('/client-setup-pack', async (request, reply) => sendAdminFile(request, reply, 'client-onboarding-pack.html'));
+
   app.get('/voice-webhook-test', async (request, reply) => sendAdminFile(request, reply, 'voice-webhook-test.html'));
   app.get('/admin/voice-webhook-test', async (request, reply) => sendAdminFile(request, reply, 'voice-webhook-test.html'));
   app.get('/voice-test', async (request, reply) => sendAdminFile(request, reply, 'voice-webhook-test.html'));
+
   app.get('/production-checklist', async (request, reply) => sendAdminFile(request, reply, 'production-checklist.html'));
   app.get('/admin/production-checklist', async (request, reply) => sendAdminFile(request, reply, 'production-checklist.html'));
   app.get('/setup-checklist', async (request, reply) => sendAdminFile(request, reply, 'production-checklist.html'));
+
   app.get('/call-leads', async (request, reply) => sendAdminFile(request, reply, 'call-leads.html'));
   app.get('/admin/call-leads', async (request, reply) => sendAdminFile(request, reply, 'call-leads.html'));
   app.get('/missed-calls', async (request, reply) => sendAdminFile(request, reply, 'call-leads.html'));
+
   app.get('/phone-connection', async (_request, reply) => sendPublicFile(reply, 'phone-connection.html'));
   app.get('/admin/phone-connection', async (request, reply) => sendAdminFile(request, reply, 'phone-connection.html'));
   app.get('/telephony', async (_request, reply) => sendPublicFile(reply, 'phone-connection.html'));
+
   app.get('/sales-presentation', async (_request, reply) => sendPublicFile(reply, 'sales-presentation.html'));
   app.get('/admin/sales-presentation', async (request, reply) => sendAdminFile(request, reply, 'sales-presentation.html'));
   app.get('/presentation', async (_request, reply) => sendPublicFile(reply, 'sales-presentation.html'));
+
   app.get('/demo-scenarios', async (_request, reply) => sendPublicFile(reply, 'demo-scenarios.html'));
   app.get('/admin/demo-scenarios', async (request, reply) => sendAdminFile(request, reply, 'demo-scenarios.html'));
+
   app.get('/unknown-questions', async (request, reply) => sendAdminFile(request, reply, 'unknown-questions.html'));
   app.get('/admin/unknown-questions', async (request, reply) => sendAdminFile(request, reply, 'unknown-questions.html'));
   app.get('/tts-test', async (request, reply) => sendAdminFile(request, reply, 'tts-test.html'));
@@ -214,6 +224,7 @@ export async function staticRoute(app: FastifyInstance): Promise<void> {
   app.get('/clients', async (request, reply) => sendAdminFile(request, reply, 'clients.html'));
   app.get('/onboarding', async (request, reply) => sendAdminFile(request, reply, 'onboarding.html'));
   app.get('/admin/onboarding', async (request, reply) => sendAdminFile(request, reply, 'onboarding.html'));
+
   app.get('/booking', async (_request, reply) => sendPublicFile(reply, 'booking.html'));
   app.get('/booking.html', async (_request, reply) => sendPublicFile(reply, 'booking.html'));
   app.get('/booking/:businessSlug', async (_request, reply) => sendPublicFile(reply, 'booking.html'));

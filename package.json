@@ -1,9 +1,9 @@
 {
   "name": "prague-ai-voice",
-  "version": "4.8.0",
+  "version": "4.9.0",
   "private": true,
   "type": "module",
-  "description": "Prague AI Voice - Admin PWA za mobilni rad bez Google Play i App Store aplikacije",
+  "description": "Prague AI Voice - Voice Provider Readiness checklist za izbor jednog gateway providera za pilot",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",

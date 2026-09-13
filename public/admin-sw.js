@@ -1,4 +1,4 @@
-const CACHE_NAME = 'prague-ai-voice-admin-5.0.0';
+const CACHE_NAME = 'prague-ai-voice-admin-5.1.0';
 const SHELL_URLS = [
   '/admin-app',
   '/admin.webmanifest',

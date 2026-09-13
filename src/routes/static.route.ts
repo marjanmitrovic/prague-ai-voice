@@ -5,7 +5,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { env } from '../config/env.js';
 
 const publicDir = path.resolve(process.cwd(), 'public');
-const APP_VERSION = '3.9.0';
+const APP_VERSION = '4.7.1';
 const ADMIN_COOKIE_NAME = 'pav_admin_session';
 const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
 
@@ -135,6 +135,16 @@ function applyRuntimeHtmlFixes(relativePath: string, file: Buffer): Buffer {
     .replace(/3\.6\.0/g, APP_VERSION)
     .replace(/3\.7\.0/g, APP_VERSION)
     .replace(/3\.8\.0/g, APP_VERSION)
+    .replace(/3\.9\.0/g, APP_VERSION)
+    .replace(/4\.0\.0/g, APP_VERSION)
+    .replace(/4\.0\.1/g, APP_VERSION)
+    .replace(/4\.1\.0/g, APP_VERSION)
+    .replace(/4\.2\.0/g, APP_VERSION)
+    .replace(/4\.3\.0/g, APP_VERSION)
+    .replace(/4\.4\.0/g, APP_VERSION)
+    .replace(/4\.5\.0/g, APP_VERSION)
+    .replace(/4\.6\.0/g, APP_VERSION)
+    .replace(/4\.7\.0/g, APP_VERSION)
     .replace(/Jedno pitanje po řádku\./g, 'Jedna otázka na řádek.')
     .replace(/<a href="#demoVoice">Test českého hlasu<\/a>/g, '<a href="#demoVoice">Test českého hlasu</a>\n        <a href="/demo-scenarios" target="_blank" rel="noreferrer">Demo scénáře</a>\n        <a href="/sales-presentation" target="_blank" rel="noreferrer">Prodejní prezentace</a>\n        <a href="/phone-connection" target="_blank" rel="noreferrer">Telefonní napojení</a>\n        <a href="/admin-login" target="_blank" rel="noreferrer">Admin</a>')
     .replace(/<a href="\/website-import" target="_blank" rel="noreferrer">Import z webu<\/a>/g, '<a href="/admin-login" target="_blank" rel="noreferrer">Admin</a>')

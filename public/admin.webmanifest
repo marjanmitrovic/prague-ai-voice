@@ -1,0 +1,45 @@
+{
+  "name": "Prague AI Voice Admin",
+  "short_name": "PAV Admin",
+  "description": "Mobilní admin aplikace pro Prague AI Voice: leady, klienti, editor a telefonní napojení.",
+  "start_url": "/admin-app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/assets/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Zmeškané hovory",
+      "short_name": "Leady",
+      "url": "/call-leads",
+      "description": "Otevřít leady ze zmeškaných hovorů"
+    },
+    {
+      "name": "Client Editor",
+      "short_name": "Editor",
+      "url": "/client-editor",
+      "description": "Upravit existujícího klienta"
+    },
+    {
+      "name": "Telefonní nastavení",
+      "short_name": "Telefon",
+      "url": "/telephony-setup",
+      "description": "Otevřít telephony setup wizard"
+    }
+  ]
+}

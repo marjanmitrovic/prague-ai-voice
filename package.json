@@ -1,9 +1,9 @@
 {
   "name": "prague-ai-voice",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "private": true,
   "type": "module",
-  "description": "Prague AI Voice - Client Manager za operativni rad sa klijentima, bookingom, leadovima, editorom, telefonijom i backupom",
+  "description": "Prague AI Voice - direktni linkovi iz Client Managera ka editoru, leadovima, aktivnosti i telefoniji po klijentu",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",

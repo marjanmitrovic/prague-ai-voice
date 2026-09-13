@@ -5,7 +5,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { env } from '../config/env.js';
 
 const publicDir = path.resolve(process.cwd(), 'public');
-const APP_VERSION = '4.9.2';
+const APP_VERSION = '5.0.0';
 const ADMIN_COOKIE_NAME = 'pav_admin_session';
 const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
 
@@ -100,6 +100,7 @@ function alignVersions(html: string): string {
     .replace(/2\.[0-9]+\.[0-9]+/g, APP_VERSION)
     .replace(/3\.[0-9]+\.[0-9]+/g, APP_VERSION)
     .replace(/4\.[0-9]+\.[0-9]+/g, APP_VERSION)
+    .replace(/5\.[0-9]+\.[0-9]+/g, APP_VERSION)
     .replace(/Jedno pitanje po řádku\./g, 'Jedna otázka na řádek.');
 }
 

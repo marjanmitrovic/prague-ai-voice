@@ -11,10 +11,7 @@ import { emailConfigured } from '../email.js';
 
 function countFiles(path: string): number {
   if (!existsSync(path)) return 0;
-  return readdirSync(path).filter((name) => {
-    const full = resolve(path, name);
-    return statSync(full).isFile();
-  }).length;
+  return readdirSync(path).filter((name) => statSync(resolve(path, name)).isFile()).length;
 }
 
 function queryBusinessSlug(query: unknown): string {
@@ -36,22 +33,26 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
 
     return {
       ok: true,
-      version: '5.0.0',
-      mode: 'client-manager-operational-admin-workflow-no-paid-llm',
+      version: '5.1.0',
+      mode: 'direct-client-links-from-client-manager-no-paid-llm',
       storage: storageInfo.mode,
       databaseUrlConfigured: storageInfo.databaseUrlConfigured,
       adminPwa: '/admin-app',
       adminPwaReady: true,
       adminPwaManifest: '/admin.webmanifest',
       adminServiceWorker: '/admin-sw.js',
-      adminServiceWorkerCacheVersion: '4.9.2',
+      adminServiceWorkerCacheVersion: '5.1.0',
       htmlNoStoreCache: true,
       sameTabAdminNavigation: true,
       pageVersionsAligned: true,
       hardTargetBlankRemoval: true,
       clientManager: '/clients',
       clientManagerReady: true,
-      clientManagerActions: ['demo', 'booking', 'leads', 'editor', 'telephonySetup', 'backup', 'csv', 'bookings'],
+      clientManagerDirectLinks: true,
+      directClientEditorLinks: true,
+      directClientActivityLinks: true,
+      directTelephonySetupLinks: true,
+      clientManagerActions: ['demo', 'booking', 'leads', 'editor', 'activity', 'telephonySetup', 'backup', 'csv', 'bookings'],
       telephony: 'voice-gateway-webhook-ready',
       telephonySetupWizard: '/telephony-setup',
       telephonySetupWizardReady: true,
@@ -61,7 +62,7 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
       telephonySetupMode: 'missed-call-forwarding-with-single-voice-gateway',
       operatorDirectIntegrations: false,
       staticRuntimeVersionFixed: true,
-      staticAppVersion: '5.0.0',
+      staticAppVersion: '5.1.0',
       voiceGatewayWebhook: '/api/voice/missed-call',
       voiceWebhookTestPage: '/voice-webhook-test',
       voiceGatewayTokenConfigured,
@@ -111,10 +112,13 @@ export async function systemRoute(app: FastifyInstance): Promise<void> {
         businessProfile: true,
         clientManager: true,
         clientManagerActions: true,
+        clientManagerDirectLinks: true,
+        directClientEditorLinks: true,
+        directClientActivityLinks: true,
+        directTelephonySetupLinks: true,
         adminPwa: true,
         adminPwaManifest: true,
         adminServiceWorker: true,
-        adminServiceWorkerCacheVersion: true,
         htmlNoStoreCache: true,
         sameTabAdminNavigation: true,
         pageVersionsAligned: true,

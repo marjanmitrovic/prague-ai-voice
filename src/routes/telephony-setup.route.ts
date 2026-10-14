@@ -3,6 +3,8 @@ import path from 'node:path';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { requireAdmin } from '../auth.js';
 
+const TELEPHONY_SETUP_VERSION = '5.3.0';
+
 function prepareTelephonySetupHtml(html: string): string {
   const directSlugScript = `
     const initialBusinessSlug = new URLSearchParams(location.search).get('businessSlug');
@@ -12,7 +14,7 @@ function prepareTelephonySetupHtml(html: string): string {
     buildSetup();`;
 
   return html
-    .replace(/4\.[0-9]+\.[0-9]+/g, '5.1.0')
+    .replace(/\d+\.\d+\.\d+ — Telephony Setup Wizard/g, `${TELEPHONY_SETUP_VERSION} — Telephony Setup Wizard`)
     .replace(/target="_blank" rel="noreferrer"/g, '')
     .replace(/target="_blank"/g, '')
     .replace(/rel="noreferrer"/g, '')

@@ -17,6 +17,12 @@ type CommandCandidate = {
   baseArgs: string[];
 };
 
+type PublicTtsError = {
+  error: 'neural_tts_unavailable' | 'edge_tts_not_installed' | 'edge_tts_upstream_blocked';
+  message: string;
+  hint: string;
+};
+
 function getEdgeTtsCandidates(): CommandCandidate[] {
   const candidates: CommandCandidate[] = [];
   if (env.EDGE_TTS_PYTHON) {
@@ -55,6 +61,49 @@ function sanitizeForSpeech(text: string): string {
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 1000);
+}
+
+function rawErrorText(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return 'unknown_error';
+  }
+}
+
+function normalizeTtsError(error: unknown): PublicTtsError {
+  const raw = rawErrorText(error);
+  const lower = raw.toLowerCase();
+
+  if (lower.includes('edge-tts is not available') || lower.includes('enoent') || lower.includes('not found')) {
+    return {
+      error: 'edge_tts_not_installed',
+      message: 'Český hlas není na serveru dostupný.',
+      hint: 'Zkontrolujte Docker image, instalaci edge-tts a proměnnou EDGE_TTS_PYTHON=/usr/bin/python3.',
+    };
+  }
+
+  if (
+    lower.includes('403') ||
+    lower.includes('invalid response status') ||
+    lower.includes('wss://speech.platform.bing.com') ||
+    lower.includes('wssserverhandshakeerror') ||
+    lower.includes('forbidden')
+  ) {
+    return {
+      error: 'edge_tts_upstream_blocked',
+      message: 'Český hlas je dočasně nedostupný, protože externí speech služba odmítla požadavek.',
+      hint: 'Aplikace běží dál. Pro produkci je potřeba stabilní placený nebo smluvní voice provider místo bezplatného edge-tts endpointu.',
+    };
+  }
+
+  return {
+    error: 'neural_tts_unavailable',
+    message: 'Český hlas je momentálně nedostupný.',
+    hint: 'Zkontrolujte serverové logy na Renderu. Detail chyby je uložen jen v logu, neukazuje se zákazníkovi.',
+  };
 }
 
 async function hasCommand(command: string, args: string[]): Promise<boolean> {
@@ -116,6 +165,8 @@ export async function ttsRoute(app: FastifyInstance): Promise<void> {
         quality: 'natural-neural',
       },
       browserFallbackDisabled: true,
+      upstreamReliability: 'best-effort-free-endpoint',
+      productionRecommendation: 'Pro živé telefonní hovory použijte stabilní voice gateway / TTS provider.',
       rateArgument: '--rate=-4%',
       note: 'Používá se pouze český Microsoft edge-tts neuralní MP3 hlas, ne browser speechSynthesis.',
     };
@@ -139,8 +190,7 @@ export async function ttsRoute(app: FastifyInstance): Promise<void> {
       request.log.warn({ error }, 'Czech neural TTS self-test failed');
       return reply.code(503).send({
         ok: false,
-        error: 'neural_tts_unavailable',
-        message: error instanceof Error ? error.message : 'edge-tts failed',
+        ...normalizeTtsError(error),
       });
     }
   });
@@ -173,9 +223,8 @@ export async function ttsRoute(app: FastifyInstance): Promise<void> {
       request.log.warn({ error }, 'Czech neural edge-tts failed');
       await rm(mp3Path, { force: true });
       return reply.code(503).send({
-        error: 'neural_tts_unavailable',
-        message: error instanceof Error ? error.message : 'edge-tts neural voice is unavailable',
-        hint: 'Není použit browser fallback, protože může znít anglickým akcentem. Zkontrolujte EDGE_TTS_PYTHON=/usr/bin/python3 a edge-tts v Docker runtime.',
+        ok: false,
+        ...normalizeTtsError(error),
       });
     }
   });

@@ -6,36 +6,37 @@
   <title>Test českého neuralního hlasu — Prague AI Voice</title>
   <style>
     :root{--bg:#f4f7fb;--panel:#fff;--text:#122033;--muted:#64748b;--border:#dbe3ee;--primary:#2563eb;--good:#0f8a3b;--warn:#b45309;--radius:18px;--shadow:0 18px 45px rgba(15,23,42,.08)}
-    *{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--text);background:linear-gradient(180deg,#f8fbff,var(--bg));line-height:1.5}.wrap{max-width:980px;margin:0 auto;padding:28px}.panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin:0 0 18px;box-shadow:var(--shadow)}h1{margin:0 0 8px;font-size:32px;letter-spacing:-.04em}p{color:var(--muted)}button,textarea,select{font:inherit}textarea,select{width:100%;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:#fff}textarea{min-height:110px;resize:vertical}button{border:0;border-radius:12px;padding:10px 14px;background:var(--primary);color:#fff;cursor:pointer}button.secondary{background:#e8eef8;color:var(--text)}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}.ok{color:var(--good);font-weight:800}.warn{color:var(--warn);font-weight:800}pre{background:#0f172a;color:#e5eefc;padding:14px;border-radius:14px;white-space:pre-wrap;overflow:auto}audio{width:100%;margin-top:10px}.small{font-size:14px;color:var(--muted)}a{color:var(--primary);font-weight:800;text-decoration:none}
+    *{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--text);background:linear-gradient(180deg,#f8fbff,var(--bg));line-height:1.5}.wrap{max-width:980px;margin:0 auto;padding:28px}.panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin:0 0 18px;box-shadow:var(--shadow)}h1{margin:0 0 8px;font-size:32px;letter-spacing:-.04em}p{color:var(--muted)}button,textarea,select{font:inherit}textarea,select{width:100%;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:#fff}textarea{min-height:110px;resize:vertical}button{border:0;border-radius:12px;padding:10px 14px;background:var(--primary);color:#fff;cursor:pointer}button.secondary{background:#e8eef8;color:var(--text)}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}.ok{color:var(--good);font-weight:800}.warn{color:var(--warn);font-weight:800}pre{background:#0f172a;color:#e5eefc;padding:14px;border-radius:14px;white-space:pre-wrap;overflow:auto}audio{width:100%;margin-top:10px}.small{font-size:14px;color:var(--muted)}a{color:var(--primary);font-weight:800;text-decoration:none}.note{background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:12px;color:#92400e;font-weight:800}
   </style>
 </head>
 <body>
   <main class="wrap">
     <section class="panel">
       <h1>Test českého neuralního hlasu</h1>
-      <p>Tato stránka testuje serverový <b>edge-tts</b> hlas. Pokud prohlížeč blokuje automatické přehrání, zobrazí se audio přehrávač a lze kliknout ručně.</p>
-      <p><a href="/">← Zpět do administrace</a></p>
+      <p>Test používá serverový MP3 hlas. Pokud externí služba hlas dočasně odmítne, stránka ukáže krátkou srozumitelnou chybu bez technického tracebacku.</p>
+      <p><a href="/admin">← Zpět do administrace</a></p>
     </section>
 
     <section class="panel">
       <label for="voice"><b>Hlas</b></label>
       <select id="voice">
-        <option value="cs-CZ-VlastaNeural">Vlasta Neural — ženský</option>
-        <option value="cs-CZ-AntoninNeural">Antonín Neural — mužský</option>
+        <option value="cs-CZ-VlastaNeural">Vlasta Neural — ženský český hlas</option>
+        <option value="cs-CZ-AntoninNeural">Antonín Neural — mužský český hlas</option>
       </select>
       <label for="text"><b>Text</b></label>
-      <textarea id="text">Dobrý den, toto je test českého neuralního hlasu Prague AI Voice. Pokud mě slyšíte, serverový hlas funguje správně.</textarea>
+      <textarea id="text">Dobrý den, dovolali jste se do Studia Aurora Praha. Jak vám mohu pomoci?</textarea>
       <div class="row">
         <button id="statusBtn" type="button" class="secondary">Zkontrolovat stav TTS</button>
-        <button id="playBtn" type="button">Vygenerovat a přehrát MP3</button>
-        <button id="downloadBtn" type="button" class="secondary">Vygenerovat a stáhnout MP3</button>
+        <button id="playBtn" type="button">Přehrát český hlas</button>
+        <button id="downloadBtn" type="button" class="secondary">Stáhnout MP3</button>
       </div>
       <div id="result" class="small">Připraveno.</div>
       <audio id="audio" controls></audio>
     </section>
 
     <section class="panel">
-      <h2>Technická diagnostika</h2>
+      <h2>Stav</h2>
+      <p class="note">Bezplatný edge-tts endpoint nemusí být stabilní pro ostré hovory. Pro produkci je potřeba stabilní voice gateway / TTS provider.</p>
       <pre id="output">Zatím bez dat.</pre>
     </section>
   </main>
@@ -47,19 +48,35 @@
     const output = document.getElementById('output');
     const audio = document.getElementById('audio');
 
+    function publicTtsMessage(data) {
+      if (data?.error === 'edge_tts_upstream_blocked') return 'Český hlas je dočasně nedostupný: externí speech služba odmítla požadavek. Aplikace běží dál.';
+      if (data?.error === 'edge_tts_not_installed') return 'Český hlas není na serveru dostupný. Zkontrolujte instalaci edge-tts na Renderu.';
+      if (data?.message) return data.message;
+      return 'Český hlas je momentálně nedostupný.';
+    }
+
+    function safeDiagnostics(data) {
+      return JSON.stringify({
+        ok: Boolean(data?.ok),
+        error: data?.error || null,
+        message: data?.message || null,
+        hint: data?.hint || null,
+        provider: 'edge-tts',
+        rawTracebackHidden: true,
+      }, null, 2);
+    }
+
     async function loadStatus() {
       result.textContent = 'Kontroluji TTS...';
       try {
-        const res = await fetch('/api/tts/status');
+        const res = await fetch('/api/tts/status', { cache: 'no-store' });
         const data = await res.json();
-        output.textContent = JSON.stringify(data, null, 2);
+        output.textContent = JSON.stringify({ ok: data.ok, preferredEngine: data.preferredEngine, edgeTts: data.edgeTts, upstreamReliability: data.upstreamReliability, productionRecommendation: data.productionRecommendation }, null, 2);
         result.className = data.edgeTts?.ok ? 'small ok' : 'small warn';
-        result.textContent = data.edgeTts?.ok
-          ? `edge-tts je dostupný: ${data.edgeTts.command}`
-          : 'edge-tts není dostupný. Zkontrolujte diagnostiku níže.';
-      } catch (error) {
+        result.textContent = data.edgeTts?.ok ? 'edge-tts je na serveru dostupný.' : 'edge-tts není dostupný. Zkontrolujte stav níže.';
+      } catch {
         result.className = 'small warn';
-        result.textContent = `Chyba stavu: ${error.message}`;
+        result.textContent = 'Stav TTS se nepodařilo načíst.';
       }
     }
 
@@ -76,16 +93,17 @@
         });
         const engine = res.headers.get('X-TTS-Engine');
         const command = res.headers.get('X-TTS-Command');
-        const bytes = res.headers.get('X-TTS-Bytes');
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          output.textContent = JSON.stringify(data, null, 2);
-          throw new Error(data.message || data.error || 'TTS selhal');
+          output.textContent = safeDiagnostics(data);
+          result.className = 'small warn';
+          result.textContent = publicTtsMessage(data);
+          return;
         }
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         audio.src = url;
-        output.textContent = JSON.stringify({ ok: true, engine, command, bytes, browserBlobBytes: blob.size, voice: voice.value }, null, 2);
+        output.textContent = JSON.stringify({ ok: true, engine, command, browserBlobBytes: blob.size, voice: voice.value }, null, 2);
         result.className = 'small ok';
         result.textContent = `MP3 vytvořen. Engine: ${engine}, velikost: ${blob.size} B.`;
         if (download) {
@@ -95,14 +113,12 @@
           a.click();
         } else {
           try { await audio.play(); }
-          catch (error) {
-            result.className = 'small warn';
-            result.textContent = `MP3 je vytvořen, ale prohlížeč blokoval automatické přehrání. Klikněte na Play v audio přehrávači. Detail: ${error.message}`;
-          }
+          catch { result.textContent = 'MP3 je vytvořen. Klikněte na Play v audio přehrávači.'; }
         }
-      } catch (error) {
+      } catch {
         result.className = 'small warn';
-        result.textContent = `Chyba: ${error.message}`;
+        result.textContent = 'Český hlas se nepodařilo vygenerovat.';
+        output.textContent = JSON.stringify({ ok: false, error: 'request_failed', rawTracebackHidden: true }, null, 2);
       }
     }
 

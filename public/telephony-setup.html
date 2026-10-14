@@ -29,23 +29,36 @@
     .warn { color:var(--warn); font-weight:900; }
     .result { background:#0f172a; color:#e5e7eb; border-radius:16px; padding:14px; overflow:auto; white-space:pre-wrap; }
     .pill { display:inline-flex; border:1px solid var(--border); border-radius:999px; padding:5px 10px; margin:4px 5px 0 0; background:#f8fafc; font-weight:900; }
-    @media (max-width:900px){ main{padding:16px}.grid{grid-template-columns:1fr} }
+    .miniGrid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+    .mini { border:1px solid var(--border); border-radius:16px; background:#f8fafc; padding:13px; }
+    .mini b { display:block; margin-bottom:5px; }
+    @media (max-width:900px){ main{padding:16px}.grid,.miniGrid{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
   <main>
     <div class="topnav">
       <a href="/admin">Admin</a>
-      <a href="/phone-connection">Telefonní napojení</a>
+      <a href="/voice-provider-readiness">Provider checklist</a>
       <a href="/voice-webhook-test">Voice webhook test</a>
       <a href="/call-leads">Zmeškané hovory</a>
     </div>
 
     <section class="hero">
-      <span class="badge">4.9.1 — Telephony Setup Wizard</span>
+      <span class="badge">5.3.0 — Telephony Setup Wizard</span>
       <h1>Jak připojit telefon klienta</h1>
-      <p>Praktický postup pro první pilot: klient si ponechá svoje číslo a nastaví přesměrování nezvednutých hovorů na AI číslo nebo voice gateway.</p>
-      <div class="warnBox">Netvrdíme přímé napojení na všechny operátory. První verze používá běžné přesměrování nezvednutých hovorů a jeden testovací voice gateway.</div>
+      <p>První prodejná verze nestaví přímé integrace se všemi operátory. Používá jednoduchý model: zákazník volá na běžné číslo klienta, nezvednutý hovor se přesměruje na AI číslo a systém vytvoří lead.</p>
+      <div class="warnBox">Nepoužívat formulaci „napojení na všechny operátory“. Používat formulaci „přesměrování nezvednutých hovorů na AI asistenta“.</div>
+      <p><span class="pill">klient si nechá svoje číslo</span><span class="pill">funguje jako pilot</span><span class="pill">jeden voice gateway</span><span class="pill">lead do administrace</span></p>
+    </section>
+
+    <section class="panel">
+      <h2>3 možné režimy</h2>
+      <div class="miniGrid">
+        <div class="mini"><b>1. Doporučeno</b><p>Přesměrovat jen nezvednuté hovory po 20–30 sekundách.</p></div>
+        <div class="mini"><b>2. Mimo pracovní dobu</b><p>Přesměrování zapínat ručně nebo podle pravidel operátora po zavírací době.</p></div>
+        <div class="mini"><b>3. Plné napojení později</b><p>SIP/gateway řešení až po ověřeném pilotu a prvních platících klientech.</p></div>
+      </div>
     </section>
 
     <section class="panel">
@@ -73,6 +86,10 @@
           <input id="aiNumber" value="+420 XXX XXX XXX" />
         </div>
         <div>
+          <label for="providerName">Voice gateway provider</label>
+          <input id="providerName" value="testovací provider" />
+        </div>
+        <div>
           <label for="delaySeconds">Po kolika sekundách přesměrovat</label>
           <select id="delaySeconds">
             <option value="20">20 sekund</option>
@@ -83,6 +100,14 @@
         <div>
           <label for="businessSlug">Business slug pro test leadu</label>
           <input id="businessSlug" value="studio-aurora" />
+        </div>
+        <div>
+          <label for="mode">Režim pilotu</label>
+          <select id="mode">
+            <option value="nezvednuté hovory">pouze nezvednuté hovory</option>
+            <option value="mimo pracovní dobu">mimo pracovní dobu</option>
+            <option value="ruční test">ruční test bez klienta</option>
+          </select>
         </div>
       </div>
       <button id="generateBtn">Vygenerovat postup</button>
@@ -95,6 +120,8 @@
       <div class="steps" id="steps"></div>
       <h3>Text pro operátora / podporu</h3>
       <textarea id="operatorText"></textarea>
+      <h3>Text pro klienta</h3>
+      <textarea id="clientText"></textarea>
       <h3>Interní poznámky pro nasazení</h3>
       <pre class="result" id="internalText"></pre>
     </section>
@@ -106,12 +133,6 @@
       <a class="btn secondary" href="/call-leads">Otevřít leady</a>
       <div id="testMessage"></div>
     </section>
-
-    <section class="panel">
-      <h2>Co říct klientovi</h2>
-      <p><span class="pill">bez změny čísla</span><span class="pill">jen zmeškané hovory</span><span class="pill">pilot za 1–2 dny</span><span class="pill">e-mail s požadavkem</span></p>
-      <textarea id="salesText">Nemusíte měnit telefonní číslo. Nastavíme pouze přesměrování nezvednutých hovorů. Když hovor nezvednete, AI asistent převezme požadavek a pošle vám ho e-mailem nebo do administrace.</textarea>
-    </section>
   </main>
 
   <script>
@@ -121,39 +142,51 @@
       return String(value || '').trim() || '+420 XXX XXX XXX';
     }
 
+    function operatorHint(operator) {
+      if (operator === 'Jiný operátor') return 'Postup ověřit v administraci operátora nebo přes zákaznickou podporu.';
+      return `U operátora ${operator} ověřit přesný postup pro přesměrování při nezvednutí. Nepředpokládat přímou integraci.`;
+    }
+
     function buildSetup() {
       const businessName = $('businessName').value.trim() || 'Klient';
       const ownerPhone = cleanPhone($('ownerPhone').value);
       const operator = $('operator').value;
       const aiNumber = cleanPhone($('aiNumber').value);
+      const providerName = $('providerName').value.trim() || 'voice gateway provider';
       const delay = $('delaySeconds').value;
       const businessSlug = $('businessSlug').value.trim() || 'studio-aurora';
+      const mode = $('mode').value;
 
       const steps = [
-        `Ověřit s klientem, že cílem je přesměrovat pouze nezvednuté hovory, ne všechny hovory. Klient si nechává svoje běžné telefonní číslo ${ownerPhone}.`,
-        `Připravit AI číslo nebo voice gateway číslo: ${aiNumber}. Toto číslo bude přijímat hovory po nezvednutí.`,
-        `U operátora ${operator} nastavit přesměrování při nezvednutí po ${delay} sekundách. Pokud operátor používá vlastní postup, řídit se jeho administrací nebo podporou.`,
-        `Po aktivaci zavolat na číslo klienta a nechat hovor nezvednutý. Po přesměrování ověřit, že gateway vytvoří lead v Prague AI Voice.`,
-        `V administraci otevřít /call-leads?businessSlug=${businessSlug} a ověřit telefon, přepis/zprávu, službu a stav leadu.`,
+        `Potvrdit obchodní rozsah: ${businessName} nechává původní číslo ${ownerPhone}. Nastavuje se režim: ${mode}.`,
+        `Připravit AI/gateway číslo ${aiNumber} u providera: ${providerName}. Bez tohoto čísla nelze testovat reálné přesměrování.`,
+        `${operatorHint(operator)} Cíl: přesměrovat pouze nezvednuté hovory po ${delay} sekundách, ne všechny hovory.`,
+        `Nastavit nebo ověřit webhook ${location.origin}/api/voice/missed-call. Pokud je nastaven VOICE_GATEWAY_TOKEN, provider musí posílat Bearer token nebo x-voice-gateway-token.`,
+        `Otestovat ručně: zavolat na číslo klienta, hovor nezvednout, počkat na přesměrování a ověřit, že vznikl lead.`,
+        `V administraci otevřít /call-leads?businessSlug=${businessSlug} a zkontrolovat číslo volajícího, zprávu, službu, zdroj a e-mailovou notifikaci.`,
       ];
 
       $('steps').innerHTML = steps.map((step) => `<div class="step">${step}</div>`).join('');
-      $('operatorText').value = `Dobrý den, potřebujeme pro číslo ${ownerPhone} nastavit přesměrování pouze při nezvednutí hovoru na číslo ${aiNumber}, ideálně po ${delay} sekundách. Nechceme přesměrovat všechny hovory, pouze hovory, které nikdo nezvedne. Prosím potvrďte, jaký je přesný postup pro operátora ${operator}.`;
+      $('operatorText').value = `Dobrý den, potřebujeme pro číslo ${ownerPhone} nastavit přesměrování pouze při nezvednutí hovoru na číslo ${aiNumber}, ideálně po ${delay} sekundách. Nechceme přesměrovat všechny hovory. Prosím potvrďte přesný postup pro operátora ${operator} a jestli se přesměrování dá kdykoliv vypnout.`;
+      $('clientText').value = `Nemusíte měnit telefonní číslo. Nastavíme pouze přesměrování nezvednutých hovorů. Když hovor nezvednete, AI asistent převezme základní požadavek a pošle vám ho e-mailem nebo do administrace. První pilot neznamená přímé napojení na všechny operátory, ale praktické zachycení zmeškaných hovorů.`;
       $('internalText').textContent = [
         `Klient: ${businessName}`,
         `Operátor: ${operator}`,
+        `Provider: ${providerName}`,
+        `Režim: ${mode}`,
         `Původní číslo: ${ownerPhone}`,
         `AI/gateway číslo: ${aiNumber}`,
         `Delay: ${delay} sekund`,
         `Business slug: ${businessSlug}`,
         `Webhook: /api/voice/missed-call`,
         `Leady: /call-leads?businessSlug=${businessSlug}`,
-        `Poznámka: přesný postup přesměrování ověřit u operátora; nepoužívat tvrzení o přímé integraci se všemi operátory.`,
+        `Readiness: před ostrým pilotem projít /voice-provider-readiness`,
+        `Poznámka: nepoužívat tvrzení o přímé integraci se všemi operátory.`,
       ].join('\n');
     }
 
     async function copySetup() {
-      const text = `${$('operatorText').value}\n\n---\n${$('internalText').textContent}\n\n${$('salesText').value}`;
+      const text = `${$('operatorText').value}\n\n--- Text pro klienta ---\n${$('clientText').value}\n\n--- Interní poznámky ---\n${$('internalText').textContent}`;
       await navigator.clipboard.writeText(text);
       $('testMessage').innerHTML = '<p class="ok">Postup zkopírován.</p>';
     }
@@ -189,7 +222,7 @@
     $('copyBtn').onclick = copySetup;
     $('printBtn').onclick = () => window.print();
     $('sendTestBtn').onclick = sendTestLead;
-    ['businessName','ownerPhone','operator','aiNumber','delaySeconds','businessSlug'].forEach((id) => $(id).addEventListener('input', buildSetup));
+    ['businessName','ownerPhone','operator','aiNumber','providerName','delaySeconds','businessSlug','mode'].forEach((id) => $(id).addEventListener('input', buildSetup));
     buildSetup();
   </script>
 </body>
